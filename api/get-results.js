@@ -1,6 +1,18 @@
-const DEFAULT_APPS_SCRIPT_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQyLLfbuF_FETAgqCjZCekC1Sg0GO9og_v32is70bj61TJlZDjHRaHENnPW-VoyrJe8RKI3gN1MYoNAej58RDH_QywIcGuHqrzqmSiYUToNyhymKMjQNgdV3Gv2FoBdF0KFVGJ3VO8HD-Jc3NbdpkIAlTN4bLUwyMIDPvOwhS4FFj5gqH5PO_-_AU4TusoHu4DEAo2D2xz7Ll5Hsol9IvkeRi5kTOTsOChJH5ppe3xuKw3Ye8sjhFRWStcSDeL-wAagO9tkNnZcd4VHtB-5ZhcYyfaWuQ&lib=MoK-R-c2tF-A5VYYTn99JYUpRjWXLvCQ_";
-const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL || DEFAULT_APPS_SCRIPT_URL;
 const ADMIN_TOKEN = "pass24opros24";
+
+const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec";
+
+function getAppsScriptUrl() {
+  const envUrl = String(process.env.APPS_SCRIPT_URL || "").trim();
+
+  // Если в Vercel осталась старая/битая переменная script.googleusercontent.com,
+  // не даём ей ломать проект и используем зафиксированный рабочий Web App URL.
+  if (envUrl && envUrl.includes("script.googleusercontent.com/macros/echo")) {
+    return DEFAULT_APPS_SCRIPT_URL;
+  }
+
+  return envUrl || DEFAULT_APPS_SCRIPT_URL;
+}
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -12,12 +24,15 @@ export default async function handler(req, res) {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
-  if (!APPS_SCRIPT_URL) {
-    return res.status(500).json({ ok: false, error: "Missing APPS_SCRIPT_URL" });
+  let appsScriptUrl;
+  try {
+    appsScriptUrl = getAppsScriptUrl();
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message });
   }
 
   try {
-    const url = new URL(APPS_SCRIPT_URL);
+    const url = new URL(appsScriptUrl);
     url.searchParams.set("action", "getResponses");
     url.searchParams.set("token", token);
 
@@ -32,6 +47,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, data: result.data || [] });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ ok: false, error: "Apps Script read error" });
+    return res.status(500).json({ ok: false, error: error.message || "Apps Script read error" });
   }
 }

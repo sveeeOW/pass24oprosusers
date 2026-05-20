@@ -653,14 +653,14 @@ function showPage(page) {
   document.getElementById("adminPage").classList.toggle("hidden", page !== "admin");
   document.getElementById("tabSurvey").classList.toggle("active", page === "survey");
   document.getElementById("tabAdmin").classList.toggle("active", page === "admin");
-  if (page === "admin" && ADMIN_TOKEN && !document.getElementById("adminContent").classList.contains("hidden")) renderAdmin();
+  if (page === "admin" && ADMIN_TOKEN && !document.getElementById("adminContent").classList.contains("hidden")) renderAdmin().catch(handleAdminLoadError);
 }
 
 function showAdminSection(s) {
   document.getElementById("resultsSection").classList.toggle("hidden", s !== "results");
   document.getElementById("settingsSection").classList.toggle("hidden", s !== "settings");
   if (s === "settings") renderSettings();
-  if (s === "results" && ADMIN_TOKEN) renderAdmin();
+  if (s === "results" && ADMIN_TOKEN) renderAdmin().catch(handleAdminLoadError);
 }
 
 /* ════════════════════════════════════════
@@ -952,14 +952,20 @@ async function loginAdmin() {
   try {
     await renderAdmin();
   } catch (err) {
-    console.error(err);
-    alert("Пароль принят, но не удалось загрузить данные из Google Sheet. Проверь APPS_SCRIPT_URL и деплой Apps Script.");
+    handleAdminLoadError(err);
+    renderAdminFromData(cachedAdminData);
   }
 }
 
 let ADMIN_TOKEN = "";
 let cachedAdminData = [];
 let npsChart, improvementsChart;
+
+function handleAdminLoadError(err) {
+  console.error(err);
+  const msg = err && err.message ? err.message : "Ошибка загрузки данных";
+  alert("Пароль принят, но не удалось загрузить данные из Google Sheet. " + msg);
+}
 
 async function loadResponsesFromServer() {
   if (!ADMIN_TOKEN) return [];
@@ -968,7 +974,7 @@ async function loadResponsesFromServer() {
   if (!res.ok || !result.ok) {
     throw new Error(result.error || "Ошибка загрузки данных");
   }
-  cachedAdminData = result.data || [];
+  cachedAdminData = Array.isArray(result.data) ? result.data : [];
   return cachedAdminData;
 }
 
@@ -989,6 +995,11 @@ function calcCsat(data) {
 
 async function renderAdmin() {
   const data = await loadResponsesFromServer();
+  renderAdminFromData(data);
+}
+
+function renderAdminFromData(data) {
+  data = Array.isArray(data) ? data : [];
   document.getElementById("mCount").textContent = data.length;
   const nps = calcNps(data);
   const npsEl = document.getElementById("mNps");
@@ -1206,18 +1217,52 @@ async function seedDemo() {
     }
   ];
 
+  let success = 0;
+  let lastError = "";
+
   for (const response of demo) {
-    await fetch("/api/submit-survey", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(response)
-    });
+    try {
+      const res = await fetch("/api/submit-survey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(response)
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result.ok) throw new Error(result.error || "Не удалось добавить демо-ответ");
+      success++;
+    } catch (err) {
+      console.error(err);
+      lastError = err && err.message ? err.message : "Не удалось добавить демо-ответ";
+    }
   }
-  await renderAdmin();
+
+  if (success) {
+    try {
+      await renderAdmin();
+    } catch (err) {
+      // Если запись прошла, но чтение Google Sheet временно не отвечает, показываем демо-данные локально.
+      cachedAdminData = demo.concat(cachedAdminData || []);
+      renderAdminFromData(cachedAdminData);
+      alert(`Добавлено демо-ответов: ${success}. Но не удалось перечитать Google Sheet: ${err.message || err}`);
+    }
+  } else {
+    alert("Демо-данные не добавлены. " + (lastError || "Проверь APPS_SCRIPT_URL и деплой Apps Script."));
+  }
 }
 
 async function exportCSV() {
-  const data = cachedAdminData.length ? cachedAdminData : await loadResponsesFromServer();
+  let data = Array.isArray(cachedAdminData) ? cachedAdminData : [];
+
+  if (!data.length && ADMIN_TOKEN) {
+    try {
+      data = await loadResponsesFromServer();
+    } catch (err) {
+      console.error(err);
+      alert("Не удалось загрузить Google Sheet. CSV будет выгружен пустым шаблоном с заголовками.");
+      data = [];
+    }
+  }
+
   const rows = [["Дата","Имя","Объект","Тип объекта","Роль","NPS","Причина NPS","Доработки","Чего не хватает","Проблемы","Знает TG-бот","Пользуется TG-ботом"]];
   data.forEach(r => rows.push([
     r.date, r.name, r.objectName, r.objectType, r.role || "",
@@ -1228,8 +1273,12 @@ async function exportCSV() {
   const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "pass24_users_survey.csv"; a.click();
-  URL.revokeObjectURL(url);
+  a.href = url;
+  a.download = "pass24_users_survey.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /* ════════════════════════════════════════

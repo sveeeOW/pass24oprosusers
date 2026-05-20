@@ -1,6 +1,25 @@
+# PASS24 — Опрос пользователей через Apps Script
+
+Готовая версия с уже вставленным Web App URL:
+
+```txt
+https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
+```
+
+Пароль админки: `pass24opros24`.
+
+Если в Vercel ранее была задана неправильная переменная `APPS_SCRIPT_URL` вида `script.googleusercontent.com/macros/echo?...`, эта версия её игнорирует и использует URL выше.
+
 # PASS24.online — Опрос пользователей через Vercel + Google Apps Script
 
-Этот проект публикуется на Vercel и сохраняет ответы в Google Sheets через Google Apps Script Web App.
+Проект публикуется на Vercel и сохраняет ответы в Google Sheets через Google Apps Script Web App.
+
+## Что исправлено в этой версии
+
+- Вход в админку больше не показывает «неверный пароль», если проблема на стороне Google Sheet / Apps Script.
+- Кнопка «Добавить демо-данные» теперь показывает понятную ошибку, если Apps Script URL указан неправильно.
+- Кнопка «⬇ Экспорт CSV» теперь всегда срабатывает: если данные не загрузились, выгружается CSV-шаблон с заголовками.
+- Убрана попытка использовать временный `script.googleusercontent.com/macros/echo?...` как рабочий API URL.
 
 ## Структура
 
@@ -15,56 +34,72 @@ package.json
 vercel.json
 ```
 
-## Переменные Vercel
+## Главный важный момент
+
+Для `APPS_SCRIPT_URL` нужен именно стабильный Web App URL из Apps Script:
 
 ```txt
-APPS_SCRIPT_URL=https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQyLLfbuF_FETAgqCjZCekC1Sg0GO9og_v32is70bj61TJlZDjHRaHENnPW-VoyrJe8RKI3gN1MYoNAej58RDH_QywIcGuHqrzqmSiYUToNyhymKMjQNgdV3Gv2FoBdF0KFVGJ3VO8HD-Jc3NbdpkIAlTN4bLUwyMIDPvOwhS4FFj5gqH5PO_-_AU4TusoHu4DEAo2D2xz7Ll5Hsol9IvkeRi5kTOTsOChJH5ppe3xuKw3Ye8sjhFRWStcSDeL-wAagO9tkNnZcd4VHtB-5ZhcYyfaWuQ&lib=MoK-R-c2tF-A5VYYTn99JYUpRjWXLvCQ_
+https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
+```
+
+Нельзя использовать URL такого вида:
+
+```txt
+https://script.googleusercontent.com/macros/echo?user_content_key=...
+```
+
+`script.googleusercontent.com/macros/echo?...` — это временный redirect/echo-адрес ответа, а не стабильный endpoint для записи и чтения данных.
+
+## Переменные Vercel
+
+В Vercel → Project → Settings → Environment Variables добавь:
+
+```txt
+APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
 ADMIN_TOKEN=pass24opros24
 ```
 
-## Уже вставленный Apps Script URL
-
-В API-файлах уже прописан резервный URL Apps Script, который ты прислал:
+Пароль админки в коде уже зафиксирован как:
 
 ```txt
-https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQyLLfbuF_FETAgqCjZCekC1Sg0GO9og_v32is70bj61TJlZDjHRaHENnPW-VoyrJe8RKI3gN1MYoNAej58RDH_QywIcGuHqrzqmSiYUToNyhymKMjQNgdV3Gv2FoBdF0KFVGJ3VO8HD-Jc3NbdpkIAlTN4bLUwyMIDPvOwhS4FFj5gqH5PO_-_AU4TusoHu4DEAo2D2xz7Ll5Hsol9IvkeRi5kTOTsOChJH5ppe3xuKw3Ye8sjhFRWStcSDeL-wAagO9tkNnZcd4VHtB-5ZhcYyfaWuQ&lib=MoK-R-c2tF-A5VYYTn99JYUpRjWXLvCQ_
+pass24opros24
 ```
 
-Идентификатор скрипта:
+## Как получить правильный Apps Script URL
+
+1. Открой Google Sheet.
+2. Перейди в `Extensions → Apps Script` / `Расширения → Apps Script`.
+3. Вставь код из `apps-script/Code.gs`.
+4. Нажми `Deploy → New deployment`.
+5. Тип деплоя: `Web app`.
+6. `Execute as`: `Me`.
+7. `Who has access`: `Anyone` или `Anyone with the link`.
+8. Нажми `Deploy`.
+9. Скопируй именно `Web app URL`.
+10. Он должен заканчиваться на `/exec`.
+
+Если деплой уже создан:
 
 ```txt
-1M9_d6LGViAgBquXEwNhWkpo1jqiDhWAdJ1dIodIQHNhscoxU0wS7SSA4
+Deploy → Manage deployments → Web app URL
 ```
 
-Vercel сначала будет брать `APPS_SCRIPT_URL` из Environment Variables. Если переменная не задана, будет использоваться URL, вставленный прямо в код. Рекомендуемый вариант — всё равно добавить этот же URL в Vercel как `APPS_SCRIPT_URL`, чтобы потом менять его без правки кода.
+## Проверка Apps Script
 
-## Подключение Google Sheet
-
-1. Создай Google Sheet.
-2. Назови вкладку `Ответы` или оставь любую — скрипт сам создаст вкладку `Ответы`.
-3. Открой `Extensions → Apps Script`.
-4. Вставь код из `apps-script/Code.gs`.
-5. Сохрани проект.
-6. Нажми `Deploy → New deployment`.
-7. Тип деплоя: `Web app`.
-8. `Execute as`: `Me`.
-9. `Who has access`: `Anyone` или `Anyone with the link`.
-10. Скопируй Web App URL, который заканчивается на `/exec`.
-11. Добавь этот URL в Vercel как `APPS_SCRIPT_URL`.
-12. Добавь `ADMIN_TOKEN=pass24opros24`.
-13. Сделай redeploy проекта на Vercel.
-
-## Проверка
-
-1. Открой Web App URL Apps Script в браузере. Должен вернуться JSON:
+Открой Web App URL в браузере. Должен вернуться JSON:
 
 ```json
 {"ok":true,"message":"PASS24 users survey Apps Script is working"}
 ```
 
-2. В Apps Script запусти функцию `testAppendResponse` вручную. В таблице должна появиться тестовая строка.
-3. Открой сайт на Vercel и отправь тестовый ответ.
-4. Открой админку, введи пароль `pass24opros24` и проверь, что данные подтянулись из таблицы.
+Если видишь HTML, ошибку доступа или пустую страницу — деплой Apps Script настроен неправильно.
+
+## Проверка записи
+
+1. В Apps Script запусти функцию `testAppendResponse` вручную.
+2. В Google Sheet должна появиться тестовая строка.
+3. После этого открой сайт на Vercel и отправь тестовый ответ.
+4. Новая строка должна появиться в Google Sheet.
 
 ## Колонки Google Sheet
 
@@ -88,12 +123,3 @@ csi_importance_avg
 csi_satisfaction_avg
 raw_json
 ```
-
-JSON-поля сохраняют полную структуру ответов. Поэтому если вопросы CSAT/CSI изменятся, старые ответы всё равно сохранят текст вопроса и оценку.
-
-
-## Исправление входа в админку
-
-Пароль админки зафиксирован в проекте как `pass24opros24`. Проверка пароля теперь выполняется локально в `public/index.html`, а серверные API-файлы также используют этот же пароль напрямую. Это сделано специально, чтобы старая или ошибочная переменная `ADMIN_TOKEN` в Vercel не блокировала вход и не показывала ложное сообщение «неверный пароль».
-
-Если после входа появляется сообщение, что пароль принят, но данные не загрузились, проблема уже не в пароле, а в `APPS_SCRIPT_URL` или в деплое Apps Script. В этом случае нужно взять стабильный Web App URL из Apps Script: `Deploy → Manage deployments → Web app URL`. Обычно он выглядит как `https://script.google.com/macros/s/.../exec`.

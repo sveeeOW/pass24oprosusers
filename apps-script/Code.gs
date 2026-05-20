@@ -2,6 +2,7 @@
  * PASS24.online — Опрос пользователей
  * Google Apps Script Web App для сохранения и чтения ответов из Google Sheets.
  * Script ID: 1M9_d6LGViAgBquXEwNhWkpo1jqiDhWAdJ1dIodIQHNhscoxU0wS7SSA4
+ * Web App URL: https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
  *
  * Как использовать:
  * 1. Открой Google Sheet → Extensions / Расширения → Apps Script.
