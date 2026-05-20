@@ -1,123 +1,72 @@
-# PASS24.online — опрос пользователей для Vercel + Google Sheets
+# PASS24.online — Опрос пользователей через Vercel + Google Apps Script
 
-Готовый проект для деплоя на Vercel через GitHub/GitLab.  
-Форма опроса находится в `public/index.html`. Ответы отправляются в API Vercel, а API сохраняет их в Google Sheet через Google Sheets API.
+Этот проект публикуется на Vercel и сохраняет ответы в Google Sheets через Google Apps Script Web App.
 
-## Что внутри
+## Структура
 
 ```txt
 public/index.html          # Опрос + админка
-api/submit-survey.js       # Принимает ответ и пишет строку в Google Sheet
-api/get-results.js         # Читает ответы из Google Sheet для админки
-api/clear-results.js       # Очищает ответы из Google Sheet, оставляя заголовки
-lib/googleSheets.js       # Общая логика авторизации, заголовков и преобразования данных
-package.json               # Зависимости проекта
-.env.example               # Пример переменных окружения
-vercel.json                # Пустая конфигурация, чтобы не ломать автоопределение API
+api/submit-survey.js       # Прокси Vercel для записи ответа в Apps Script
+api/get-results.js         # Прокси Vercel для чтения ответов из Apps Script
+api/clear-results.js       # Прокси Vercel для очистки ответов
+apps-script/Code.gs        # Код Google Apps Script для вставки в Google Sheet
+package.json
+.env.example
+vercel.json
 ```
 
-## Логика работы
+## Переменные Vercel
 
 ```txt
-Пользователь заполняет опрос
-        ↓
-public/index.html вызывает POST /api/submit-survey
-        ↓
-Vercel Function авторизуется в Google Sheets через service account
-        ↓
-Ответ добавляется новой строкой в Google Sheet
-        ↓
-Админка вызывает GET /api/get-results?token=...
-        ↓
-Таблица, NPS, CSAT, CSI, графики и CSV строятся из Google Sheet
-```
-
-## 1. Создать Google Sheet
-
-1. Создай новую таблицу Google Sheets.
-2. Скопируй `GOOGLE_SHEET_ID` из URL:
-
-```txt
-https://docs.google.com/spreadsheets/d/GOOGLE_SHEET_ID/edit
-```
-
-Вкладку можно назвать `Ответы`, но это необязательно: если вкладки с таким названием нет, API создаст её сам.
-
-## 2. Создать service account в Google Cloud
-
-1. Открой Google Cloud Console.
-2. Создай проект или выбери существующий.
-3. Включи Google Sheets API.
-4. Создай Service Account.
-5. Создай JSON-ключ для service account.
-6. Из JSON нужны два значения:
-   - `client_email` → это `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - `private_key` → это `GOOGLE_PRIVATE_KEY`
-
-## 3. Дать доступ service account к Google Sheet
-
-В Google Sheet нажми **Поделиться** и добавь email service account как редактора.
-
-Пример email выглядит примерно так:
-
-```txt
-pass24-survey-writer@project-id.iam.gserviceaccount.com
-```
-
-Без этого API не сможет писать данные в таблицу.
-
-## 4. Добавить переменные окружения в Vercel
-
-В Vercel открой:
-
-```txt
-Project → Settings → Environment Variables
-```
-
-Добавь:
-
-```txt
-GOOGLE_SHEET_ID=...
-GOOGLE_SHEET_TAB=Ответы
-GOOGLE_SERVICE_ACCOUNT_EMAIL=...
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+APPS_SCRIPT_URL=https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQyLLfbuF_FETAgqCjZCekC1Sg0GO9og_v32is70bj61TJlZDjHRaHENnPW-VoyrJe8RKI3gN1MYoNAej58RDH_QywIcGuHqrzqmSiYUToNyhymKMjQNgdV3Gv2FoBdF0KFVGJ3VO8HD-Jc3NbdpkIAlTN4bLUwyMIDPvOwhS4FFj5gqH5PO_-_AU4TusoHu4DEAo2D2xz7Ll5Hsol9IvkeRi5kTOTsOChJH5ppe3xuKw3Ye8sjhFRWStcSDeL-wAagO9tkNnZcd4VHtB-5ZhcYyfaWuQ&lib=MoK-R-c2tF-A5VYYTn99JYUpRjWXLvCQ_
 ADMIN_TOKEN=pass24opros24
 ```
 
-Важно: `ADMIN_TOKEN` — это пароль, который вводится во вкладке «Админка».
+## Уже вставленный Apps Script URL
 
-Если private key вставляется с реальными переносами строк — нормально. Если вставляется одной строкой с `\n` — тоже нормально, код это поддерживает.
-
-## 5. Загрузить в Git и подключить Vercel
-
-```bash
-git init
-git add .
-git commit -m "Add PASS24 users survey"
-git branch -M main
-git remote add origin <URL_ТВОЕГО_РЕПОЗИТОРИЯ>
-git push -u origin main
-```
-
-Далее в Vercel:
+В API-файлах уже прописан резервный URL Apps Script, который ты прислал:
 
 ```txt
-Add New Project → Import Git Repository → Deploy
+https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQyLLfbuF_FETAgqCjZCekC1Sg0GO9og_v32is70bj61TJlZDjHRaHENnPW-VoyrJe8RKI3gN1MYoNAej58RDH_QywIcGuHqrzqmSiYUToNyhymKMjQNgdV3Gv2FoBdF0KFVGJ3VO8HD-Jc3NbdpkIAlTN4bLUwyMIDPvOwhS4FFj5gqH5PO_-_AU4TusoHu4DEAo2D2xz7Ll5Hsol9IvkeRi5kTOTsOChJH5ppe3xuKw3Ye8sjhFRWStcSDeL-wAagO9tkNnZcd4VHtB-5ZhcYyfaWuQ&lib=MoK-R-c2tF-A5VYYTn99JYUpRjWXLvCQ_
 ```
 
-## 6. Проверка после деплоя
+Идентификатор скрипта:
 
-1. Открой ссылку Vercel.
-2. Заполни тестовый ответ.
-3. Проверь, что появилась страница «Спасибо за ответ».
-4. Открой Google Sheet — должна появиться новая строка.
-5. Открой вкладку «Админка».
-6. Введи `ADMIN_TOKEN`.
-7. Проверь, что ответы, NPS, CSAT, CSI, графики и экспорт CSV подтянулись из Google Sheet.
+```txt
+1M9_d6LGViAgBquXEwNhWkpo1jqiDhWAdJ1dIodIQHNhscoxU0wS7SSA4
+```
 
-## Структура колонок Google Sheet
+Vercel сначала будет брать `APPS_SCRIPT_URL` из Environment Variables. Если переменная не задана, будет использоваться URL, вставленный прямо в код. Рекомендуемый вариант — всё равно добавить этот же URL в Vercel как `APPS_SCRIPT_URL`, чтобы потом менять его без правки кода.
 
-Таблица создаёт такие заголовки:
+## Подключение Google Sheet
+
+1. Создай Google Sheet.
+2. Назови вкладку `Ответы` или оставь любую — скрипт сам создаст вкладку `Ответы`.
+3. Открой `Extensions → Apps Script`.
+4. Вставь код из `apps-script/Code.gs`.
+5. Сохрани проект.
+6. Нажми `Deploy → New deployment`.
+7. Тип деплоя: `Web app`.
+8. `Execute as`: `Me`.
+9. `Who has access`: `Anyone` или `Anyone with the link`.
+10. Скопируй Web App URL, который заканчивается на `/exec`.
+11. Добавь этот URL в Vercel как `APPS_SCRIPT_URL`.
+12. Добавь `ADMIN_TOKEN=pass24opros24`.
+13. Сделай redeploy проекта на Vercel.
+
+## Проверка
+
+1. Открой Web App URL Apps Script в браузере. Должен вернуться JSON:
+
+```json
+{"ok":true,"message":"PASS24 users survey Apps Script is working"}
+```
+
+2. В Apps Script запусти функцию `testAppendResponse` вручную. В таблице должна появиться тестовая строка.
+3. Открой сайт на Vercel и отправь тестовый ответ.
+4. Открой админку, введи пароль `pass24opros24` и проверь, что данные подтянулись из таблицы.
+
+## Колонки Google Sheet
 
 ```txt
 created_at
@@ -140,32 +89,11 @@ csi_satisfaction_avg
 raw_json
 ```
 
-`csat_json`, `csi_json`, `improvements_json` и `raw_json` нужны, чтобы опрос оставался полностью синхронизированным с фактическими вопросами. Если ты поменяешь вопросы CSAT/CSI в HTML, ответы всё равно сохранятся с текстом вопроса и оценкой.
-
-## Важное замечание
-
-Не публикуй `.env`, JSON-ключ service account и `GOOGLE_PRIVATE_KEY` в репозитории. Они должны храниться только в переменных окружения Vercel.
+JSON-поля сохраняют полную структуру ответов. Поэтому если вопросы CSAT/CSI изменятся, старые ответы всё равно сохранят текст вопроса и оценку.
 
 
-## Исправление ошибки Vercel `api/*.js`
+## Исправление входа в админку
 
-В этой версии удалён блок `functions` из `vercel.json`. Vercel сам определяет serverless functions из папки `/api`.
-Служебный модуль Google Sheets перенесён из `/api/_googleSheets.js` в `/lib/googleSheets.js`, чтобы внутри `/api` остались только реальные endpoints:
+Пароль админки зафиксирован в проекте как `pass24opros24`. Проверка пароля теперь выполняется локально в `public/index.html`, а серверные API-файлы также используют этот же пароль напрямую. Это сделано специально, чтобы старая или ошибочная переменная `ADMIN_TOKEN` в Vercel не блокировала вход и не показывала ложное сообщение «неверный пароль».
 
-```txt
-/api/submit-survey.js
-/api/get-results.js
-/api/clear-results.js
-```
-
-Если в старой версии у тебя был `vercel.json` с таким содержимым, его нужно заменить на `{}` или удалить файл полностью:
-
-```json
-{
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 10
-    }
-  }
-}
-```
+Если после входа появляется сообщение, что пароль принят, но данные не загрузились, проблема уже не в пароле, а в `APPS_SCRIPT_URL` или в деплое Apps Script. В этом случае нужно взять стабильный Web App URL из Apps Script: `Deploy → Manage deployments → Web app URL`. Обычно он выглядит как `https://script.google.com/macros/s/.../exec`.

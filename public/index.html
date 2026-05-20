@@ -928,22 +928,32 @@ function resetSurvey() {
 /* ════════════════════════════════════════
    ADMIN
 ════════════════════════════════════════ */
+const ADMIN_PASSWORD = "pass24opros24";
+
 async function loginAdmin() {
   const pass = document.getElementById("adminPassword").value.trim();
+
   if (!pass) {
     alert("Введите пароль");
     return;
   }
 
-  ADMIN_TOKEN = pass;
+  // Проверяем пароль локально, чтобы ошибки Google Apps Script / Vercel API
+  // не показывались пользователю как «неверный пароль».
+  if (pass !== ADMIN_PASSWORD) {
+    alert("Неверный пароль");
+    return;
+  }
+
+  ADMIN_TOKEN = ADMIN_PASSWORD;
+  document.getElementById("loginCard").classList.add("hidden");
+  document.getElementById("adminContent").classList.remove("hidden");
+
   try {
     await renderAdmin();
-    document.getElementById("loginCard").classList.add("hidden");
-    document.getElementById("adminContent").classList.remove("hidden");
   } catch (err) {
     console.error(err);
-    ADMIN_TOKEN = "";
-    alert("Неверный пароль или ошибка загрузки данных");
+    alert("Пароль принят, но не удалось загрузить данные из Google Sheet. Проверь APPS_SCRIPT_URL и деплой Apps Script.");
   }
 }
 
