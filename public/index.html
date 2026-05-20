@@ -469,12 +469,13 @@
         <label>Что мешает или неудобно в работе с приложением?</label>
         <textarea id="f-problems" placeholder="Расскажите о неудобных моментах"></textarea>
 
-        <label>Знаете ли вы о возможности заказать пропуск в Telegram-боте?</label>
+        <label>Знаете ли вы о возможности заказать пропуск в Telegram-боте? <span style="color:var(--red)">*</span></label>
         <select id="f-tgKnow" onchange="toggleTgUse()">
           <option value="">— выберите ответ —</option>
           <option value="Да">Да</option>
           <option value="Нет">Нет</option>
         </select>
+        <div class="error-msg" id="err-tgKnow">Пожалуйста, выберите ответ</div>
 
         <div id="tgUseBlock" class="hidden" style="margin-top:4px">
           <label>Пользуетесь ли вы заказом пропуска в Telegram-боте?</label>
@@ -780,6 +781,8 @@ function toggleCheck(i) {
 
 function toggleTgUse() {
   const val = document.getElementById("f-tgKnow").value;
+  markInputErr("f-tgKnow", false);
+  setErr("err-tgKnow", false);
   document.getElementById("tgUseBlock").classList.toggle("hidden", val !== "Да");
   if (val !== "Да") document.getElementById("f-tgUse").value = "";
 }
@@ -834,6 +837,7 @@ async function submitSurvey() {
   // Clear previous errors
   markInputErr("f-name", false); setErr("err-name", false);
   markInputErr("f-object", false); setErr("err-object", false);
+  markInputErr("f-tgKnow", false); setErr("err-tgKnow", false);
   markScaleErr("nps", false); setErr("err-nps", false);
   cfg.csat.forEach((_, i) => { markScaleErr(`csat_${i}`, false); setErr(`err-csat_${i}`, false); });
   cfg.csi.forEach((_, i) => {
@@ -843,9 +847,11 @@ async function submitSurvey() {
 
   const name = document.getElementById("f-name").value.trim();
   const obj = document.getElementById("f-object").value.trim();
+  const tgKnow = document.getElementById("f-tgKnow").value;
 
   if (!name) fail("f-name", "err-name", "Пожалуйста, укажите имя");
   if (!obj) fail("f-object", "err-object", "Укажите название объекта");
+  if (!tgKnow) fail("f-tgKnow", "err-tgKnow", "Пожалуйста, выберите ответ");
 
   cfg.csat.forEach((_, i) => {
     if (scaleVal(`csat_${i}`) === null) failScale(`csat_${i}`, `err-csat_${i}`);
@@ -876,7 +882,7 @@ async function submitSurvey() {
     npsReason: document.getElementById("f-npsReason").value,
     missing: document.getElementById("f-missing").value,
     problems: document.getElementById("f-problems").value,
-    tgKnow: document.getElementById("f-tgKnow").value,
+    tgKnow,
     tgUse: document.getElementById("f-tgUse").value,
     improvements: [...document.querySelectorAll('input[name="improvement"]:checked')].map(x => x.value),
     csat: cfg.csat.map((q, i) => ({ question: q, value: scaleVal(`csat_${i}`) })),
