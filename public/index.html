@@ -436,6 +436,248 @@
     .role-tag-uk { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
     .role-tag-contractor { background: #fffbeb; color: #b45309; border-color: #fde68a; }
     .role-tag-other { background: #f4f4f5; color: #52525b; border-color: #d4d4d8; }
+
+
+    /* ── MOBILE OPTIMIZATION ── */
+    .scale-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .scale-line > span {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .nps-scale-labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    @media(max-width: 760px) {
+      body {
+        background: #fff;
+        -webkit-text-size-adjust: 100%;
+      }
+      header {
+        padding: 0 12px;
+        position: sticky;
+      }
+      .header-inner {
+        padding: 10px 0;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .logo-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+      .logo-text { font-size: 14px; }
+      .logo-sub { font-size: 10px; }
+      .header-title { display: none; }
+      nav {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      nav button {
+        width: 100%;
+        min-height: 38px;
+        padding: 9px 10px;
+        font-size: 13px;
+        border-radius: 10px;
+      }
+      main,
+      main.wide {
+        max-width: 100%;
+        padding: 16px 12px 44px;
+      }
+      .card {
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 8px rgba(17,17,17,.04);
+      }
+      .card-accent {
+        border-left-width: 0;
+        border-top: 4px solid var(--red);
+      }
+      h2 { font-size: 20px; line-height: 1.2; }
+      h3 { font-size: 16px; }
+      p, .muted { font-size: 14px; }
+      .section-label {
+        margin: 22px 0 10px;
+        align-items: flex-start;
+      }
+      .section-num {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        font-size: 12px;
+      }
+      .section-title {
+        font-size: 15px;
+        line-height: 1.25;
+        padding-top: 3px;
+      }
+      label {
+        margin: 14px 0 6px;
+        font-size: 14px;
+        line-height: 1.35;
+      }
+      input[type="text"], input[type="password"], input[type="email"], textarea, select {
+        min-height: 46px;
+        border-radius: 12px;
+        padding: 12px 13px;
+        font-size: 16px;
+      }
+      textarea {
+        min-height: 104px;
+      }
+      .grid,
+      .grid3 {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .csi-block {
+        padding: 14px;
+        border-radius: 14px;
+        margin: 12px 0;
+      }
+      .csi-block .label-q {
+        font-size: 14px;
+        line-height: 1.35;
+        margin-bottom: 12px;
+      }
+      .csi-row {
+        margin-bottom: 16px;
+      }
+      .csi-row:last-child {
+        margin-bottom: 0;
+      }
+      .scale-line {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        align-items: stretch;
+      }
+      .scale-line > span {
+        white-space: normal;
+        font-size: 12px;
+        line-height: 1.25;
+      }
+      .scale {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        width: 100%;
+      }
+      .scale button,
+      .scale.nps-scale button {
+        width: 100%;
+        height: 42px;
+        min-width: 0;
+        border-radius: 12px;
+        font-size: 15px;
+      }
+      .scale.nps-scale {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+      .scale-error {
+        padding: 8px;
+      }
+      .nps-scale-labels {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        margin-top: 8px;
+        line-height: 1.35;
+      }
+      .check-grid {
+        grid-template-columns: 1fr;
+        gap: 9px;
+      }
+      .check-item {
+        padding: 12px;
+        border-radius: 12px;
+        font-size: 14px;
+      }
+      .check-box {
+        width: 20px;
+        height: 20px;
+      }
+      .submit-area {
+        margin-top: 20px;
+        padding-top: 16px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .btn {
+        width: 100%;
+        min-height: 46px;
+        border-radius: 12px;
+        font-size: 15px;
+      }
+      .submit-note {
+        text-align: center;
+        line-height: 1.35;
+      }
+      .success-banner {
+        padding: 24px 18px;
+        border-radius: 14px;
+      }
+      .success-banner h2 { font-size: 22px; }
+      #loginCard {
+        max-width: 100% !important;
+        margin: 24px auto !important;
+        padding: 0 12px !important;
+      }
+      .admin-bar {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .metric {
+        padding: 16px;
+      }
+      .metric .value {
+        font-size: 30px;
+      }
+      canvas { max-height: 220px; }
+      .question-editor {
+        padding: 12px;
+      }
+      #settingsSection .card > div[style*="display:flex"] {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    @media(max-width: 390px) {
+      main,
+      main.wide {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      .card {
+        padding: 14px;
+      }
+      .scale.nps-scale {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .logo-text { font-size: 13px; }
+      .logo-sub { display: none; }
+    }
+
   </style>
 </head>
 <body>
@@ -518,7 +760,7 @@
         <label style="margin-top:0">Насколько вероятно, что вы порекомендуете приложение PASS24.online коллегам или соседям?</label>
         <div class="scale-wrap">
           <div id="npsScaleWrap"></div>
-          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--muted)">
+          <div class="nps-scale-labels">
             <span>0 — точно не порекомендую</span>
             <span>10 — обязательно порекомендую</span>
           </div>
@@ -785,10 +1027,10 @@ function renderSurvey() {
     const wrap = document.createElement("div");
     wrap.style.marginBottom = "18px";
     wrap.innerHTML = `<div style="font-weight:700;font-size:14px;margin-bottom:8px">${q}</div>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span style="font-size:12px;color:var(--muted);white-space:nowrap">1 — плохо</span>
+      <div class="scale-line">
+        <span>1 — плохо</span>
         <div id="scale-wrap-csat_${i}"></div>
-        <span style="font-size:12px;color:var(--muted);white-space:nowrap">5 — отлично</span>
+        <span>5 — отлично</span>
       </div>
       <div class="error-msg" id="err-csat_${i}">Пожалуйста, выберите оценку</div>`;
     cs.appendChild(wrap);
@@ -805,19 +1047,19 @@ function renderSurvey() {
       <div class="grid">
         <div class="csi-row">
           <label>Насколько это важно для вас?</label>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:12px;color:var(--muted);white-space:nowrap">1 — не важно</span>
+          <div class="scale-line csi-scale-line">
+            <span>1 — не важно</span>
             <div id="scale-wrap-csi_imp_${i}"></div>
-            <span style="font-size:12px;color:var(--muted);white-space:nowrap">5 — очень важно</span>
+            <span>5 — очень важно</span>
           </div>
           <div class="error-msg" id="err-csi_imp_${i}">Пожалуйста, выберите оценку</div>
         </div>
         <div class="csi-row">
           <label>Насколько удобно это работает сейчас?</label>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:12px;color:var(--muted);white-space:nowrap">1 — неудобно</span>
+          <div class="scale-line csi-scale-line">
+            <span>1 — неудобно</span>
             <div id="scale-wrap-csi_sat_${i}"></div>
-            <span style="font-size:12px;color:var(--muted);white-space:nowrap">5 — удобно</span>
+            <span>5 — удобно</span>
           </div>
           <div class="error-msg" id="err-csi_sat_${i}">Пожалуйста, выберите оценку</div>
         </div>
