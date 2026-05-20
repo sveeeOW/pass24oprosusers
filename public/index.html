@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Опрос пользователей PASS24.online</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --red: #E9403B;
+      --red-dark: #c7322d;
+      --green: #00DBC2;
+      --green-dark: #00b9a3;
+      --black: #111111;
+      --light-gray: #EBEBEC;
+      --gray: #C8CACC;
+      --card: #ffffff;
+      --text: #111111;
+      --muted: #6b7280;
+      --border: #E8E9EB;
+      --bg: #F4F5F7;
+      --good: #00DBC2;
+      --warn: #f59e0b;
+      --bad: #E9403B;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--black);
+      color: white;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 0;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-mark {
+      width: 36px; height: 36px;
+      background: var(--red);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 16px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .logo-text { font-size: 15px; font-weight: 700; color: white; line-height: 1.2; }
+    .logo-sub { font-size: 11px; font-weight: 400; color: var(--gray); }
+    .header-title {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255,255,255,.75);
+    }
+    nav {
+      display: flex;
+      gap: 4px;
+    }
+    nav button {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      background: rgba(255,255,255,.1);
+      color: rgba(255,255,255,.7);
+      transition: all .15s;
+    }
+    nav button:hover { background: rgba(255,255,255,.18); color: white; }
+    nav button.active { background: var(--red); color: white; }
+
+    /* ── MAIN ── */
+    main { max-width: 860px; margin: 0 auto; padding: 28px 20px 56px; }
+    main.wide { max-width: 1180px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(17,17,17,.05);
+      margin-bottom: 16px;
+    }
+    .card-accent {
+      border-left: 4px solid var(--red);
+    }
+    h2 { margin: 0 0 6px; font-size: 22px; }
+    h3 { margin: 0 0 12px; font-size: 17px; }
+    h4 { margin: 0 0 10px; font-size: 15px; font-weight: 700; }
+    p { margin: 0 0 12px; line-height: 1.55; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .small { font-size: 13px; }
+    .hidden { display: none !important; }
+
+    /* ── FORM ELEMENTS ── */
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 14px;
+      margin: 18px 0 6px;
+    }
+    input[type="text"], input[type="password"], input[type="email"], textarea, select {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font: inherit;
+      font-size: 14px;
+      background: white;
+      color: var(--text);
+      transition: border-color .15s;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--red); }
+    input.error, textarea.error, select.error { border-color: var(--red) !important; background: #fff8f8; }
+    .error-msg { color: var(--red); font-size: 12px; margin-top: 4px; display: none; }
+    .error-msg.show { display: block; }
+    textarea { min-height: 88px; resize: vertical; }
+
+    /* ── GRID ── */
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media(max-width: 680px) {
+      .grid, .grid3 { grid-template-columns: 1fr; }
+    }
+
+    /* ── SCALE BUTTONS ── */
+    .scale-wrap { margin: 8px 0 4px; }
+    .scale-hints {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .scale-hint-pair {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .scale-hint-pair .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gray); }
+    .scale {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .scale button {
+      width: 44px; height: 40px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--muted);
+      transition: all .12s;
+    }
+    .scale button:hover { border-color: var(--red); color: var(--red); }
+    .scale button.selected {
+      background: var(--red);
+      color: white;
+      border-color: var(--red);
+    }
+    .scale.nps-scale button { width: 46px; }
+    .scale.nps-scale button.selected { background: var(--red); }
+    .scale-error { border: 1.5px solid var(--red); border-radius: 12px; padding: 8px; }
+
+    /* ── CSI BLOCK ── */
+    .csi-block {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 10px 0;
+    }
+    .csi-block .label-q { font-weight: 700; font-size: 14px; margin-bottom: 14px; }
+    .csi-row { margin-bottom: 14px; }
+    .csi-row label { margin: 0 0 6px; font-weight: 600; font-size: 13px; color: var(--muted); }
+
+    /* ── CHECKBOXES ── */
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    @media(max-width: 540px) { .check-grid { grid-template-columns: 1fr; } }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: white;
+      cursor: pointer;
+      transition: border-color .12s, background .12s;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .check-item:hover { border-color: var(--red); }
+    .check-item.checked { border-color: var(--red); background: #fff2f2; }
+    .check-item input { display: none; }
+    .check-box {
+      width: 18px; height: 18px;
+      border-radius: 5px;
+      border: 2px solid var(--gray);
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .12s;
+    }
+    .check-item.checked .check-box {
+      background: var(--red);
+      border-color: var(--red);
+    }
+    .check-item.checked .check-box::after {
+      content: '✓';
+      color: white;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    /* ── BUTTONS ── */
+    .btn { border: none; border-radius: 10px; padding: 12px 20px; cursor: pointer; font-weight: 700; font-size: 14px; transition: all .15s; }
+    .btn-primary { background: var(--red); color: white; }
+    .btn-primary:hover { background: var(--red-dark); }
+    .btn-secondary { background: var(--light-gray); color: var(--black); }
+    .btn-secondary:hover { background: var(--gray); }
+    .btn-green { background: var(--green); color: var(--black); }
+    .btn-green:hover { background: var(--green-dark); }
+    .btn-danger { background: #fee2e2; color: #991b1b; }
+    .btn-danger:hover { background: #fecaca; }
+
+    /* ── SUBMIT AREA ── */
+    .submit-area {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .submit-note { font-size: 13px; color: var(--muted); }
+
+    /* ── SUCCESS ── */
+    .success-banner {
+      background: linear-gradient(135deg, #00DBC2, #00b9a3);
+      color: var(--black);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+    }
+    .success-banner h2 { color: var(--black); font-size: 26px; }
+    .success-banner p { color: rgba(0,0,0,.7); margin: 8px 0 20px; }
+
+    /* ── ADMIN ── */
+    .admin-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .metric {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .metric b { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .metric .value { font-size: 34px; font-weight: 900; margin-top: 4px; color: var(--black); }
+    .metric .value.green { color: var(--green-dark); }
+    .metric .value.red { color: var(--red); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--bg); font-weight: 700; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    tr:hover td { background: #fafafa; }
+
+    .avg-group { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .avg-row { margin: 12px 0; }
+    .avg-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+    .avg-score { font-weight: 900; font-size: 14px; }
+    .avg-bar { height: 10px; background: var(--light-gray); border-radius: 999px; overflow: hidden; }
+    .avg-fill { height: 100%; background: var(--red); border-radius: 999px; transition: width .4s; }
+    .avg-fill.green { background: var(--green); }
+
+    canvas { max-height: 260px; }
+
+    .question-editor {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin: 10px 0;
+      background: var(--bg);
+    }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 28px 0 12px;
+    }
+    .section-num {
+      width: 28px; height: 28px;
+      background: var(--red);
+      color: white;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .section-title { font-weight: 700; font-size: 16px; }
+
+    /* ── NPS COLORS ── */
+    .nps-bad button[data-value="0"],
+    .nps-bad button[data-value="1"],
+    .nps-bad button[data-value="2"],
+    .nps-bad button[data-value="3"],
+    .nps-bad button[data-value="4"],
+    .nps-bad button[data-value="5"],
+    .nps-bad button[data-value="6"] { color: #dc4444; }
+    .nps-mid button[data-value="7"],
+    .nps-mid button[data-value="8"] { color: #ca8a04; }
+    .nps-good button[data-value="9"],
+    .nps-good button[data-value="10"] { color: #16a34a; }
+    .scale button[data-value].selected { color: white !important; }
+
+    /* ── ROLE BADGE ── */
+    .role-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--light-gray);
+      color: var(--muted);
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-mark">P</div>
+      <div>
+        <div class="logo-text">PASS24.online</div>
+        <div class="logo-sub">Опрос пользователей</div>
+      </div>
+    </div>
+    <div class="header-title">Мобильное приложение</div>
+    <nav>
+      <button id="tabSurvey" class="active" onclick="showPage('survey')">Пройти опрос</button>
+      <button id="tabAdmin" onclick="showPage('admin')">Админка</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ══════════════════════════════
+     SURVEY PAGE
+══════════════════════════════ -->
+<div id="surveyPage">
+  <main>
+    <!-- Intro banner -->
+    <div class="card card-accent" style="margin-bottom:20px">
+      <h2>Расскажите, как вам приложение</h2>
+      <p class="muted" style="margin:0">Опрос займёт 3–5 минут. Ваши ответы помогут нам сделать оформление пропусков проще и удобнее.</p>
+    </div>
+
+    <div id="successBanner" class="success-banner hidden">
+      <div style="font-size:48px;margin-bottom:12px">✓</div>
+      <h2>Спасибо за ответ!</h2>
+      <p>Ваше мнение важно — мы используем его для улучшения приложения PASS24.online.</p>
+      <button class="btn btn-secondary" onclick="resetSurvey()">Пройти ещё раз</button>
+    </div>
+
+    <div id="surveyForm">
+
+      <!-- 1 · Кто вы -->
+      <div class="section-label"><div class="section-num">1</div><div class="section-title">Кто вы и где живёте / работаете</div></div>
+      <div class="card">
+        <div class="grid">
+          <div>
+            <label>Ваше имя</label>
+            <input id="f-name" type="text" placeholder="Например, Анна" />
+            <div class="error-msg" id="err-name">Пожалуйста, укажите имя</div>
+          </div>
+          <div>
+            <label>Название объекта</label>
+            <input id="f-object" type="text" placeholder="Например, КП «Лесной»" />
+            <div class="error-msg" id="err-object">Укажите название объекта</div>
+          </div>
+        </div>
+        <label>Тип объекта</label>
+        <select id="f-objectType"></select>
+        <label>Ваша роль на объекте</label>
+        <select id="f-role"></select>
+      </div>
+
+      <!-- 2 · CSAT -->
+      <div class="section-label"><div class="section-num">2</div><div class="section-title">Насколько вы довольны приложением</div></div>
+      <div class="card">
+        <p class="muted" style="margin:0 0 16px">Оцените каждый аспект по шкале 1 (плохо) — 5 (отлично).</p>
+        <div id="csatSection"></div>
+      </div>
+
+      <!-- 3 · CSI -->
+      <div class="section-label"><div class="section-num">3</div><div class="section-title">Важность и удобство функций</div></div>
+      <div class="card">
+        <p class="muted" style="margin:0 0 6px">По каждой функции укажите: насколько она важна для вас и насколько удобно она работает сейчас.</p>
+        <div id="csiSection"></div>
+      </div>
+
+      <!-- 4 · NPS -->
+      <div class="section-label"><div class="section-num">4</div><div class="section-title">Рекомендация</div></div>
+      <div class="card">
+        <label style="margin-top:0">Насколько вероятно, что вы порекомендуете приложение PASS24.online коллегам или соседям?</label>
+        <div class="scale-wrap">
+          <div id="npsScaleWrap"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--muted)">
+            <span>0 — точно не порекомендую</span>
+            <span>10 — обязательно порекомендую</span>
+          </div>
+        </div>
+        <div class="error-msg" id="err-nps">Пожалуйста, выберите оценку NPS</div>
+        <label>Почему вы поставили такую оценку?</label>
+        <textarea id="f-npsReason" placeholder="Необязательно — ваш комментарий поможет нам понять, что важно"></textarea>
+      </div>
+
+      <!-- 5 · Улучшения -->
+      <div class="section-label"><div class="section-num">5</div><div class="section-title">Что хотелось бы улучшить</div></div>
+      <div class="card">
+        <label style="margin-top:0">Какие доработки приложения вам наиболее интересны?</label>
+        <div class="check-grid" id="improvementsSection"></div>
+
+        <label>Чего вам не хватает в приложении?</label>
+        <textarea id="f-missing" placeholder="Опишите свои идеи или пожелания"></textarea>
+        <label>Что мешает или неудобно в работе с приложением?</label>
+        <textarea id="f-problems" placeholder="Расскажите о неудобных моментах"></textarea>
+
+        <label>Знаете ли вы о возможности заказать пропуск в Telegram-боте?</label>
+        <select id="f-tgKnow" onchange="toggleTgUse()">
+          <option value="">— выберите ответ —</option>
+          <option value="Да">Да</option>
+          <option value="Нет">Нет</option>
+        </select>
+
+        <div id="tgUseBlock" class="hidden" style="margin-top:4px">
+          <label>Пользуетесь ли вы заказом пропуска в Telegram-боте?</label>
+          <select id="f-tgUse">
+            <option value="">— выберите ответ —</option>
+            <option value="Да, регулярно">Да, регулярно</option>
+            <option value="Да, иногда">Да, иногда</option>
+            <option value="Нет, не пользуюсь">Нет, не пользуюсь</option>
+          </select>
+        </div>
+
+        <div class="submit-area">
+          <button class="btn btn-primary" onclick="submitSurvey()">Отправить ответ</button>
+          <span class="submit-note">Ответ будет отправлен команде PASS24.online для анализа качества приложения</span>
+        </div>
+      </div>
+
+    </div><!-- /surveyForm -->
+  </main>
+</div>
+
+<!-- ══════════════════════════════
+     ADMIN PAGE
+══════════════════════════════ -->
+<div id="adminPage" class="hidden">
+  <div id="loginCard" style="max-width:420px;margin:40px auto;padding:0 20px">
+    <div class="card">
+      <h2>Вход в админку</h2>
+      <p class="muted">Введите пароль для доступа к результатам.</p>
+      <label>Пароль</label>
+      <input id="adminPassword" type="password" placeholder="Пароль" onkeydown="if(event.key==='Enter')loginAdmin()" />
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" onclick="loginAdmin()">Войти</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminContent" class="hidden">
+    <main class="wide">
+      <div class="admin-bar">
+        <button class="btn btn-secondary" onclick="showAdminSection('results')">Результаты</button>
+        <button class="btn btn-secondary" onclick="showAdminSection('settings')">Настроить опрос</button>
+        <button class="btn btn-green" onclick="exportCSV()">⬇ Экспорт CSV</button>
+        <button class="btn btn-secondary" onclick="seedDemo()">Добавить демо-данные</button>
+        <button class="btn btn-danger" onclick="clearResponses()">Очистить ответы</button>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="resultsSection">
+        <div class="grid3" style="margin-bottom:16px">
+          <div class="metric"><b>Всего ответов</b><div class="value" id="mCount">0</div></div>
+          <div class="metric"><b>NPS индекс</b><div class="value" id="mNps">0</div></div>
+          <div class="metric"><b>Средний CSAT</b><div class="value" id="mCsat">0</div></div>
+        </div>
+
+        <div class="grid">
+          <div class="card"><h3>Распределение NPS</h3><canvas id="npsChart"></canvas></div>
+          <div class="card"><h3>Интересные доработки</h3><canvas id="improvementsChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h3>Средние оценки по вопросам</h3>
+          <p class="muted">Средний результат каждого показателя по всем ответам.</p>
+          <div id="questionAverages"></div>
+        </div>
+
+        <div class="card">
+          <h3>Ответы</h3>
+          <div style="overflow:auto"><table id="responsesTable"></table></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="settingsSection" class="hidden">
+        <div class="card">
+          <h2>Настроить опрос</h2>
+          <p class="muted">Изменения сохраняются в браузере и сразу отражаются в форме опроса.</p>
+
+          <label>Типы объектов <span class="small muted">(каждый с новой строки)</span></label>
+          <textarea id="settingObjectTypes"></textarea>
+
+          <label>Роли пользователей <span class="small muted">(каждая с новой строки)</span></label>
+          <textarea id="settingRoles"></textarea>
+
+          <label>Вопросы CSAT <span class="small muted">— оценка удовлетворённости (1–5)</span></label>
+          <div id="csatEditor"></div>
+          <button class="btn btn-secondary" onclick="addItem('csat')" style="margin-top:8px">+ Добавить вопрос</button>
+
+          <label>Функции для оценки CSI <span class="small muted">— важность × удобство (1–5)</span></label>
+          <div id="csiEditor"></div>
+          <button class="btn btn-secondary" onclick="addItem('csi')" style="margin-top:8px">+ Добавить функцию</button>
+
+          <label>Варианты доработок <span class="small muted">(каждый с новой строки)</span></label>
+          <textarea id="settingImprovements"></textarea>
+
+          <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveSettings()">Сохранить настройки</button>
+            <button class="btn btn-danger" onclick="resetSettings()">Сбросить к умолчаниям</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   DEFAULT CONFIG
+════════════════════════════════════════ */
+const DEFAULT_CONFIG = {
+  password: "pass24opros24",
+  objectTypes: [
+    "Коттеджный поселок",
+    "Жилой комплекс",
+    "Бизнес-центр",
+    "Коворкинг",
+    "Государственное учреждение",
+    "Паркинг",
+    "Производственный объект",
+    "Склад / логистический объект",
+    "Другое"
+  ],
+  roles: [
+    "Житель / владелец",
+    "Сотрудник / арендатор",
+    "Представитель управляющей компании",
+    "Подрядчик / представитель подрядчика",
+    "Другое"
+  ],
+  csat: [
+    "Удобство создания гостевого пропуска",
+    "Скорость оформления пропуска (от открытия до готового пропуска)",
+    "Удобство приглашения гостя с автомобилем (автопропуск)",
+    "Стабильность работы приложения (без сбоев и зависаний)",
+    "Понятность интерфейса (легко найти нужное действие)",
+    "Дизайн интерфейса",
+    "Уведомления о статусе пропуска и проходе гостя",
+    "Приложение в целом — насколько вы им довольны"
+  ],
+  csi: [
+    "Быстрота создания пропуска",
+    "Разные типы доступа (пешеход, авто, курьер, подрядчик)",
+    "Создание постоянного пропуска",
+    "Отправка приглашения гостю (QR-код, ссылка или SMS/мессенджер)",
+    "Установка даты и времени действия пропуска",
+    "Уведомление о проходе / въезде гостя в реальном времени",
+    "История пропусков с поиском",
+    "Редактирование и отмена пропуска после создания",
+    "Работа без звонков охране — самостоятельное управление доступом"
+  ],
+  improvements: [
+    "Быстрый повтор предыдущего пропуска",
+    "Шаблоны для частых гостей (родственники, курьеры)",
+    "История пропусков с поиском и фильтрами",
+    "Виджет / ярлык на главном экране телефона",
+    "Групповой пропуск для нескольких гостей",
+    "Чат или связь с охраной через приложение",
+    "Заказ постоянного пропуска в пропусках, а не доверенностях",
+    "Возможность просмотра камер видеонаблюдения на КПП"
+  ]
+};
+
+/* ════════════════════════════════════════
+   STORAGE
+════════════════════════════════════════ */
+function getConfig() {
+  return JSON.parse(localStorage.getItem("pass24_users_config") || JSON.stringify(DEFAULT_CONFIG));
+}
+function setConfig(c) { localStorage.setItem("pass24_users_config", JSON.stringify(c)); }
+
+/* ════════════════════════════════════════
+   PAGE ROUTING
+════════════════════════════════════════ */
+function showPage(page) {
+  document.getElementById("surveyPage").classList.toggle("hidden", page !== "survey");
+  document.getElementById("adminPage").classList.toggle("hidden", page !== "admin");
+  document.getElementById("tabSurvey").classList.toggle("active", page === "survey");
+  document.getElementById("tabAdmin").classList.toggle("active", page === "admin");
+  if (page === "admin" && ADMIN_TOKEN && !document.getElementById("adminContent").classList.contains("hidden")) renderAdmin();
+}
+
+function showAdminSection(s) {
+  document.getElementById("resultsSection").classList.toggle("hidden", s !== "results");
+  document.getElementById("settingsSection").classList.toggle("hidden", s !== "settings");
+  if (s === "settings") renderSettings();
+  if (s === "results" && ADMIN_TOKEN) renderAdmin();
+}
+
+/* ════════════════════════════════════════
+   SCALE BUILDER
+════════════════════════════════════════ */
+function makeScale(id, max, isNps = false) {
+  const wrap = document.createElement("div");
+  wrap.className = "scale" + (isNps ? " nps-scale nps-bad nps-mid nps-good" : "");
+  wrap.dataset.scaleId = id;
+
+  const start = isNps ? 0 : 1;
+  for (let i = start; i <= max; i++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = i;
+    b.dataset.value = i;
+    b.onclick = () => {
+      wrap.querySelectorAll("button").forEach(x => x.classList.remove("selected"));
+      b.classList.add("selected");
+      const sw = document.getElementById("scale-wrap-" + id);
+      if (sw) sw.classList.remove("scale-error");
+    };
+    wrap.appendChild(b);
+  }
+  return wrap;
+}
+
+function scaleVal(id) {
+  const el = document.querySelector(`[data-scale-id="${id}"] .selected`);
+  return el ? Number(el.dataset.value) : null;
+}
+
+/* ════════════════════════════════════════
+   RENDER SURVEY
+════════════════════════════════════════ */
+function renderSurvey() {
+  const cfg = getConfig();
+
+  // Object types
+  const ot = document.getElementById("f-objectType");
+  ot.innerHTML = cfg.objectTypes.map(x => `<option>${x}</option>`).join("");
+
+  // Roles
+  const rl = document.getElementById("f-role");
+  rl.innerHTML = cfg.roles.map(x => `<option>${x}</option>`).join("");
+
+  // CSAT
+  const cs = document.getElementById("csatSection");
+  cs.innerHTML = "";
+  cfg.csat.forEach((q, i) => {
+    const wrap = document.createElement("div");
+    wrap.style.marginBottom = "18px";
+    wrap.innerHTML = `<div style="font-weight:700;font-size:14px;margin-bottom:8px">${q}</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--muted);white-space:nowrap">1 — плохо</span>
+        <div id="scale-wrap-csat_${i}"></div>
+        <span style="font-size:12px;color:var(--muted);white-space:nowrap">5 — отлично</span>
+      </div>
+      <div class="error-msg" id="err-csat_${i}">Пожалуйста, выберите оценку</div>`;
+    cs.appendChild(wrap);
+    document.getElementById(`scale-wrap-csat_${i}`).appendChild(makeScale(`csat_${i}`, 5));
+  });
+
+  // CSI
+  const csi = document.getElementById("csiSection");
+  csi.innerHTML = "";
+  cfg.csi.forEach((q, i) => {
+    const block = document.createElement("div");
+    block.className = "csi-block";
+    block.innerHTML = `<div class="label-q">${q}</div>
+      <div class="grid">
+        <div class="csi-row">
+          <label>Насколько это важно для вас?</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--muted);white-space:nowrap">1 — не важно</span>
+            <div id="scale-wrap-csi_imp_${i}"></div>
+            <span style="font-size:12px;color:var(--muted);white-space:nowrap">5 — очень важно</span>
+          </div>
+          <div class="error-msg" id="err-csi_imp_${i}">Пожалуйста, выберите оценку</div>
+        </div>
+        <div class="csi-row">
+          <label>Насколько удобно это работает сейчас?</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--muted);white-space:nowrap">1 — неудобно</span>
+            <div id="scale-wrap-csi_sat_${i}"></div>
+            <span style="font-size:12px;color:var(--muted);white-space:nowrap">5 — удобно</span>
+          </div>
+          <div class="error-msg" id="err-csi_sat_${i}">Пожалуйста, выберите оценку</div>
+        </div>
+      </div>`;
+    csi.appendChild(block);
+    document.getElementById(`scale-wrap-csi_imp_${i}`).appendChild(makeScale(`csi_imp_${i}`, 5));
+    document.getElementById(`scale-wrap-csi_sat_${i}`).appendChild(makeScale(`csi_sat_${i}`, 5));
+  });
+
+  // NPS
+  const npsWrap = document.getElementById("npsScaleWrap");
+  npsWrap.innerHTML = "";
+  npsWrap.appendChild(makeScale("nps", 10, true));
+
+  // Improvements
+  const imp = document.getElementById("improvementsSection");
+  imp.innerHTML = cfg.improvements.map((x, i) => `
+    <label class="check-item" id="ci-${i}" onclick="toggleCheck(${i})">
+      <input type="checkbox" name="improvement" value="${x}">
+      <div class="check-box"></div>
+      <span>${x}</span>
+    </label>`).join("");
+}
+
+function toggleCheck(i) {
+  const el = document.getElementById(`ci-${i}`);
+  const inp = el.querySelector("input");
+  inp.checked = !inp.checked;
+  el.classList.toggle("checked", inp.checked);
+}
+
+function toggleTgUse() {
+  const val = document.getElementById("f-tgKnow").value;
+  document.getElementById("tgUseBlock").classList.toggle("hidden", val !== "Да");
+  if (val !== "Да") document.getElementById("f-tgUse").value = "";
+}
+
+/* ════════════════════════════════════════
+   VALIDATION & SUBMIT
+════════════════════════════════════════ */
+function setErr(id, show, msg = "") {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle("show", show);
+  if (msg) el.textContent = msg;
+}
+function markInputErr(id, show) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle("error", show);
+}
+function markScaleErr(scaleId, show) {
+  const wrap = document.getElementById("scale-wrap-" + scaleId);
+  if (!wrap) return;
+  wrap.classList.toggle("scale-error", show);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function submitSurvey() {
+  const cfg = getConfig();
+  let valid = true;
+  let firstErr = null;
+
+  function fail(inputId, errId, msg) {
+    markInputErr(inputId, true);
+    setErr(errId, true, msg);
+    if (!firstErr) firstErr = document.getElementById(inputId) || document.getElementById(errId);
+    valid = false;
+  }
+  function failScale(scaleId, errId) {
+    markScaleErr(scaleId, true);
+    setErr(errId, true);
+    if (!firstErr) firstErr = document.getElementById("scale-wrap-" + scaleId);
+    valid = false;
+  }
+
+  // Clear previous errors
+  markInputErr("f-name", false); setErr("err-name", false);
+  markInputErr("f-object", false); setErr("err-object", false);
+  markScaleErr("nps", false); setErr("err-nps", false);
+  cfg.csat.forEach((_, i) => { markScaleErr(`csat_${i}`, false); setErr(`err-csat_${i}`, false); });
+  cfg.csi.forEach((_, i) => {
+    markScaleErr(`csi_imp_${i}`, false); setErr(`err-csi_imp_${i}`, false);
+    markScaleErr(`csi_sat_${i}`, false); setErr(`err-csi_sat_${i}`, false);
+  });
+
+  const name = document.getElementById("f-name").value.trim();
+  const obj = document.getElementById("f-object").value.trim();
+
+  if (!name) fail("f-name", "err-name", "Пожалуйста, укажите имя");
+  if (!obj) fail("f-object", "err-object", "Укажите название объекта");
+
+  cfg.csat.forEach((_, i) => {
+    if (scaleVal(`csat_${i}`) === null) failScale(`csat_${i}`, `err-csat_${i}`);
+  });
+  cfg.csi.forEach((_, i) => {
+    if (scaleVal(`csi_imp_${i}`) === null) failScale(`csi_imp_${i}`, `err-csi_imp_${i}`);
+    if (scaleVal(`csi_sat_${i}`) === null) failScale(`csi_sat_${i}`, `err-csi_sat_${i}`);
+  });
+
+  if (scaleVal("nps") === null) {
+    markScaleErr("nps", true); setErr("err-nps", true);
+    if (!firstErr) firstErr = document.getElementById("npsScaleWrap");
+    valid = false;
+  }
+
+  if (!valid) {
+    if (firstErr) firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  const response = {
+    date: new Date().toLocaleString("ru-RU"),
+    name,
+    objectName: obj,
+    objectType: document.getElementById("f-objectType").value,
+    role: document.getElementById("f-role").value,
+    nps: scaleVal("nps"),
+    npsReason: document.getElementById("f-npsReason").value,
+    missing: document.getElementById("f-missing").value,
+    problems: document.getElementById("f-problems").value,
+    tgKnow: document.getElementById("f-tgKnow").value,
+    tgUse: document.getElementById("f-tgUse").value,
+    improvements: [...document.querySelectorAll('input[name="improvement"]:checked')].map(x => x.value),
+    csat: cfg.csat.map((q, i) => ({ question: q, value: scaleVal(`csat_${i}`) })),
+    csi: cfg.csi.map((q, i) => ({
+      question: q,
+      importance: scaleVal(`csi_imp_${i}`),
+      satisfaction: scaleVal(`csi_sat_${i}`)
+    }))
+  };
+
+  const submitButton = document.querySelector('.submit-area .btn-primary');
+  const originalText = submitButton.textContent;
+  submitButton.disabled = true;
+  submitButton.textContent = "Отправляем...";
+
+  try {
+    const res = await fetch("/api/submit-survey", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(response)
+    });
+    const result = await res.json().catch(() => ({}));
+
+    if (!res.ok || !result.ok) {
+      throw new Error(result.error || "Ошибка отправки ответа");
+    }
+
+    document.getElementById("surveyForm").classList.add("hidden");
+    document.getElementById("successBanner").classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (err) {
+    console.error(err);
+    alert("Не удалось отправить ответ. Проверьте подключение и попробуйте ещё раз.");
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = originalText;
+  }
+}
+
+function resetSurvey() {
+  document.getElementById("surveyForm").classList.remove("hidden");
+  document.getElementById("successBanner").classList.add("hidden");
+  renderSurvey();
+  document.getElementById("f-tgKnow").value = "";
+  document.getElementById("f-tgUse").value = "";
+  document.getElementById("tgUseBlock").classList.add("hidden");
+}
+
+/* ════════════════════════════════════════
+   ADMIN
+════════════════════════════════════════ */
+async function loginAdmin() {
+  const pass = document.getElementById("adminPassword").value.trim();
+  if (!pass) {
+    alert("Введите пароль");
+    return;
+  }
+
+  ADMIN_TOKEN = pass;
+  try {
+    await renderAdmin();
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("adminContent").classList.remove("hidden");
+  } catch (err) {
+    console.error(err);
+    ADMIN_TOKEN = "";
+    alert("Неверный пароль или ошибка загрузки данных");
+  }
+}
+
+let ADMIN_TOKEN = "";
+let cachedAdminData = [];
+let npsChart, improvementsChart;
+
+async function loadResponsesFromServer() {
+  if (!ADMIN_TOKEN) return [];
+  const res = await fetch(`/api/get-results?token=${encodeURIComponent(ADMIN_TOKEN)}`);
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok || !result.ok) {
+    throw new Error(result.error || "Ошибка загрузки данных");
+  }
+  cachedAdminData = result.data || [];
+  return cachedAdminData;
+}
+
+function avg(arr) {
+  const clean = arr.filter(x => typeof x === "number" && !isNaN(x));
+  return clean.length ? clean.reduce((a, b) => a + b, 0) / clean.length : 0;
+}
+function calcNps(data) {
+  if (!data.length) return 0;
+  const promo = data.filter(x => Number(x.nps) >= 9).length;
+  const detract = data.filter(x => Number(x.nps) <= 6).length;
+  return Math.round(((promo - detract) / data.length) * 100);
+}
+function calcCsat(data) {
+  const vals = data.flatMap(r => (r.csat || []).map(x => Number(x.value)));
+  return avg(vals).toFixed(2);
+}
+
+async function renderAdmin() {
+  const data = await loadResponsesFromServer();
+  document.getElementById("mCount").textContent = data.length;
+  const nps = calcNps(data);
+  const npsEl = document.getElementById("mNps");
+  npsEl.textContent = nps;
+  npsEl.className = "value " + (nps >= 30 ? "green" : nps >= 0 ? "" : "red");
+  document.getElementById("mCsat").textContent = calcCsat(data);
+  renderQuestionAverages(data);
+
+  // Table
+  const table = document.getElementById("responsesTable");
+  table.innerHTML = `<tr>
+    <th>Дата</th><th>Имя</th><th>Объект</th><th>Тип</th><th>Роль</th>
+    <th>NPS</th><th>Доработки</th><th>Чего не хватает</th><th>Проблемы</th>
+    <th>Знает TG-бот</th><th>Пользуется TG-ботом</th>
+  </tr>` + data.map(r => `<tr>
+    <td>${escapeHtml(r.date)}</td>
+    <td>${escapeHtml(r.name)}</td>
+    <td>${escapeHtml(r.objectName)}</td>
+    <td>${escapeHtml(r.objectType)}</td>
+    <td><span class="role-tag">${escapeHtml(r.role || "")}</span></td>
+    <td><b>${escapeHtml(r.nps)}</b></td>
+    <td style="max-width:180px">${escapeHtml((r.improvements || []).join(", "))}</td>
+    <td>${escapeHtml(r.missing || "")}</td>
+    <td>${escapeHtml(r.problems || "")}</td>
+    <td>${escapeHtml(r.tgKnow || "")}</td>
+    <td>${escapeHtml(r.tgUse || "")}</td>
+  </tr>`).join("");
+
+  // NPS chart
+  const npsCounts = {
+    "Критики 0–6": data.filter(x => x.nps <= 6).length,
+    "Нейтральные 7–8": data.filter(x => x.nps >= 7 && x.nps <= 8).length,
+    "Промоутеры 9–10": data.filter(x => x.nps >= 9).length
+  };
+  if (npsChart) npsChart.destroy();
+  npsChart = new Chart(document.getElementById("npsChart"), {
+    type: "bar",
+    data: {
+      labels: Object.keys(npsCounts),
+      datasets: [{ label: "Количество", data: Object.values(npsCounts),
+        backgroundColor: ["#E9403B", "#f59e0b", "#00DBC2"] }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // Improvements chart
+  const imp = {};
+  data.forEach(r => (r.improvements || []).forEach(x => imp[x] = (imp[x] || 0) + 1));
+  if (improvementsChart) improvementsChart.destroy();
+  improvementsChart = new Chart(document.getElementById("improvementsChart"), {
+    type: "bar",
+    data: {
+      labels: Object.keys(imp),
+      datasets: [{ label: "Голоса", data: Object.values(imp),
+        backgroundColor: "#00DBC2" }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function renderQuestionAverages(data) {
+  const wrap = document.getElementById("questionAverages");
+  if (!wrap) return;
+  if (!data.length) { wrap.innerHTML = "<p class='muted'>Пока нет ответов.</p>"; return; }
+
+  function renderRows(title, rows, maxValue, green = false) {
+    const body = rows.map(row => {
+      const pct = Math.max(0, Math.min(100, (row.avg / maxValue) * 100));
+      return `<div class="avg-row">
+        <div class="avg-head">
+          <span>${escapeHtml(row.label)}</span>
+          <span class="avg-score">${row.avg.toFixed(2)} / ${maxValue}</span>
+        </div>
+        <div class="avg-bar"><div class="avg-fill${green ? " green" : ""}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join("");
+    return `<div class="avg-group"><h4>${escapeHtml(title)}</h4>${body}</div>`;
+  }
+
+  function aggregateByQuestion(rows, field) {
+    const map = new Map();
+    rows.forEach(item => {
+      if (!item || !item.question) return;
+      const value = Number(item[field]);
+      if (isNaN(value)) return;
+      if (!map.has(item.question)) map.set(item.question, []);
+      map.get(item.question).push(value);
+    });
+    return [...map.entries()].map(([label, vals]) => ({ label, avg: avg(vals) }));
+  }
+
+  const csatRows = aggregateByQuestion(data.flatMap(r => r.csat || []), "value");
+  const impRows = aggregateByQuestion(data.flatMap(r => r.csi || []), "importance");
+  const satRows = aggregateByQuestion(data.flatMap(r => r.csi || []), "satisfaction");
+  const npsVals = data.map(r => Number(r.nps)).filter(v => !isNaN(v));
+
+  wrap.innerHTML =
+    renderRows("NPS — средняя оценка вероятности рекомендации", [{ label: "Вероятность рекомендовать PASS24.online", avg: avg(npsVals) }], 10, true) +
+    renderRows("Удовлетворённость мобильным приложением (CSAT)", csatRows, 5) +
+    renderRows("Важность функций", impRows, 5) +
+    renderRows("Удобство текущей работы функций", satRows, 5, true);
+}
+
+/* ════════════════════════════════════════
+   SETTINGS
+════════════════════════════════════════ */
+function renderSettings() {
+  const cfg = getConfig();
+  document.getElementById("settingObjectTypes").value = cfg.objectTypes.join("\n");
+  document.getElementById("settingRoles").value = cfg.roles.join("\n");
+  document.getElementById("settingImprovements").value = cfg.improvements.join("\n");
+
+  document.getElementById("csatEditor").innerHTML = cfg.csat.map((x, i) => `
+    <div class="question-editor">
+      <input data-csat="${i}" value="${x.replaceAll('"', '&quot;')}">
+      <div style="margin-top:10px">
+        <button class="btn btn-danger" style="padding:6px 12px;font-size:12px" onclick="removeItem('csat', ${i})">Удалить</button>
+      </div>
+    </div>`).join("");
+
+  document.getElementById("csiEditor").innerHTML = cfg.csi.map((x, i) => `
+    <div class="question-editor">
+      <input data-csi="${i}" value="${x.replaceAll('"', '&quot;')}">
+      <div style="margin-top:10px">
+        <button class="btn btn-danger" style="padding:6px 12px;font-size:12px" onclick="removeItem('csi', ${i})">Удалить</button>
+      </div>
+    </div>`).join("");
+}
+
+function addItem(type) {
+  const cfg = getConfig();
+  cfg[type].push(type === "csat" ? "Новый вопрос про удовлетворённость" : "Новая функция для оценки");
+  setConfig(cfg);
+  renderSettings();
+  renderSurvey();
+}
+function removeItem(type, idx) {
+  const cfg = getConfig();
+  cfg[type].splice(idx, 1);
+  setConfig(cfg);
+  renderSettings();
+  renderSurvey();
+}
+function saveSettings() {
+  const cfg = getConfig();
+  cfg.objectTypes = document.getElementById("settingObjectTypes").value.split("\n").map(x => x.trim()).filter(Boolean);
+  cfg.roles = document.getElementById("settingRoles").value.split("\n").map(x => x.trim()).filter(Boolean);
+  cfg.improvements = document.getElementById("settingImprovements").value.split("\n").map(x => x.trim()).filter(Boolean);
+  cfg.csat = [...document.querySelectorAll("[data-csat]")].map(x => x.value.trim()).filter(Boolean);
+  cfg.csi = [...document.querySelectorAll("[data-csi]")].map(x => x.value.trim()).filter(Boolean);
+  setConfig(cfg);
+  renderSurvey();
+  alert("Настройки сохранены");
+}
+function resetSettings() {
+  if (confirm("Сбросить настройки к умолчаниям?")) {
+    localStorage.setItem("pass24_users_config", JSON.stringify(DEFAULT_CONFIG));
+    renderSettings();
+    renderSurvey();
+  }
+}
+
+/* ════════════════════════════════════════
+   DATA UTILS
+════════════════════════════════════════ */
+async function clearResponses() {
+  if (!ADMIN_TOKEN) return alert("Сначала войдите в админку");
+  if (!confirm("Удалить все ответы из Google Sheet? Заголовки таблицы останутся.")) return;
+  const res = await fetch("/api/clear-results", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: ADMIN_TOKEN })
+  });
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok || !result.ok) return alert(result.error || "Не удалось очистить ответы");
+  await renderAdmin();
+}
+
+async function seedDemo() {
+  const cfg = getConfig();
+  const demo = [
+    {
+      date: new Date().toLocaleString("ru-RU"), name: "Марина", objectName: "КП Берёзовый",
+      objectType: "Коттеджный поселок", role: "Житель / владелец",
+      nps: 9, npsReason: "Очень удобно звать гостей без звонков охране",
+      missing: "Хочу виджет на экране телефона", problems: "Иногда приходится долго искать пункт меню",
+      tgKnow: "Да", tgUse: "Да, иногда",
+      improvements: ["Быстрый повтор предыдущего пропуска", "Виджет / ярлык на главном экране телефона"],
+      csat: cfg.csat.map(q => ({ question: q, value: 4 + Math.round(Math.random()) })),
+      csi: cfg.csi.map(q => ({ question: q, importance: 4 + Math.round(Math.random()), satisfaction: 3 + Math.round(Math.random()) }))
+    },
+    {
+      date: new Date().toLocaleString("ru-RU"), name: "Дмитрий", objectName: "БЦ Горизонт",
+      objectType: "Бизнес-центр", role: "Сотрудник / арендатор",
+      nps: 7, npsReason: "В целом нормально, но не хватает шаблонов",
+      missing: "Шаблоны для повторных гостей", problems: "Уведомления приходят с опозданием",
+      tgKnow: "Нет", tgUse: "",
+      improvements: ["Шаблоны для частых гостей (родственники, курьеры)", "Заказ постоянного пропуска в пропусках, а не доверенностях"],
+      csat: cfg.csat.map(q => ({ question: q, value: 3 + Math.round(Math.random()) })),
+      csi: cfg.csi.map(q => ({ question: q, importance: 3 + Math.round(Math.random() * 2), satisfaction: 3 + Math.round(Math.random()) }))
+    },
+    {
+      date: new Date().toLocaleString("ru-RU"), name: "Ольга", objectName: "ЖК Солнечный",
+      objectType: "Жилой комплекс", role: "Житель / владелец",
+      nps: 10, npsReason: "Лучшее решение — уже рекомендовала соседям",
+      missing: "", problems: "",
+      tgKnow: "Да", tgUse: "Да, регулярно",
+      improvements: ["Возможность просмотра камер видеонаблюдения на КПП"],
+      csat: cfg.csat.map(q => ({ question: q, value: 5 })),
+      csi: cfg.csi.map(q => ({ question: q, importance: 5, satisfaction: 4 + Math.round(Math.random()) }))
+    }
+  ];
+
+  for (const response of demo) {
+    await fetch("/api/submit-survey", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(response)
+    });
+  }
+  await renderAdmin();
+}
+
+async function exportCSV() {
+  const data = cachedAdminData.length ? cachedAdminData : await loadResponsesFromServer();
+  const rows = [["Дата","Имя","Объект","Тип объекта","Роль","NPS","Причина NPS","Доработки","Чего не хватает","Проблемы","Знает TG-бот","Пользуется TG-ботом"]];
+  data.forEach(r => rows.push([
+    r.date, r.name, r.objectName, r.objectType, r.role || "",
+    r.nps, r.npsReason, (r.improvements || []).join("; "),
+    r.missing, r.problems, r.tgKnow || "", r.tgUse || ""
+  ]));
+  const csv = rows.map(row => row.map(v => `"${String(v ?? "").replaceAll('"', '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "pass24_users_survey.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+renderSurvey();
+</script>
+</body>
+</html>

@@ -10,10 +10,10 @@ public/index.html          # Опрос + админка
 api/submit-survey.js       # Принимает ответ и пишет строку в Google Sheet
 api/get-results.js         # Читает ответы из Google Sheet для админки
 api/clear-results.js       # Очищает ответы из Google Sheet, оставляя заголовки
-api/_googleSheets.js       # Общая логика авторизации, заголовков и преобразования данных
+lib/googleSheets.js       # Общая логика авторизации, заголовков и преобразования данных
 package.json               # Зависимости проекта
 .env.example               # Пример переменных окружения
-vercel.json                # Настройки Vercel Functions
+vercel.json                # Пустая конфигурация, чтобы не ломать автоопределение API
 ```
 
 ## Логика работы
@@ -145,3 +145,27 @@ raw_json
 ## Важное замечание
 
 Не публикуй `.env`, JSON-ключ service account и `GOOGLE_PRIVATE_KEY` в репозитории. Они должны храниться только в переменных окружения Vercel.
+
+
+## Исправление ошибки Vercel `api/*.js`
+
+В этой версии удалён блок `functions` из `vercel.json`. Vercel сам определяет serverless functions из папки `/api`.
+Служебный модуль Google Sheets перенесён из `/api/_googleSheets.js` в `/lib/googleSheets.js`, чтобы внутри `/api` остались только реальные endpoints:
+
+```txt
+/api/submit-survey.js
+/api/get-results.js
+/api/clear-results.js
+```
+
+Если в старой версии у тебя был `vercel.json` с таким содержимым, его нужно заменить на `{}` или удалить файл полностью:
+
+```json
+{
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 10
+    }
+  }
+}
+```

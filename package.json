@@ -8,8 +8,5 @@
   },
   "dependencies": {
     "googleapis": "latest"
-  },
-  "devDependencies": {
-    "vercel": "latest"
   }
 }
