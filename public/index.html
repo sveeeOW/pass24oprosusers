@@ -355,17 +355,44 @@
     .nps-good button[data-value="10"] { color: #16a34a; }
     .scale button[data-value].selected { color: white !important; }
 
-    /* ── ROLE BADGE ── */
-    .role-tag {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 6px;
+    /* ── ADMIN BADGES ── */
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
       font-size: 11px;
-      font-weight: 700;
-      background: var(--light-gray);
-      color: var(--muted);
+      font-weight: 800;
+      line-height: 1.25;
       vertical-align: middle;
+      border: 1px solid transparent;
+      white-space: nowrap;
     }
+    .admin-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: .75;
+      flex-shrink: 0;
+    }
+    .object-tag-kp { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .object-tag-jk { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .object-tag-bc { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+    .object-tag-coworking { background: #fdf4ff; color: #a21caf; border-color: #f5d0fe; }
+    .object-tag-gov { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
+    .object-tag-parking { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .object-tag-prod { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    .object-tag-warehouse { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+    .object-tag-other { background: #f4f4f5; color: #52525b; border-color: #d4d4d8; }
+
+    .role-tag-resident { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .role-tag-employee { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+    .role-tag-uk { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+    .role-tag-contractor { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .role-tag-other { background: #f4f4f5; color: #52525b; border-color: #d4d4d8; }
   </style>
 </head>
 <body>
@@ -816,6 +843,28 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function getObjectTypeBadgeClass(value) {
+  const v = String(value || "").toLowerCase();
+  if (v.includes("коттедж")) return "object-tag-kp";
+  if (v.includes("жилой") || v.includes("жк")) return "object-tag-jk";
+  if (v.includes("бизнес")) return "object-tag-bc";
+  if (v.includes("коворкинг")) return "object-tag-coworking";
+  if (v.includes("государ")) return "object-tag-gov";
+  if (v.includes("паркинг")) return "object-tag-parking";
+  if (v.includes("производ")) return "object-tag-prod";
+  if (v.includes("склад") || v.includes("логист")) return "object-tag-warehouse";
+  return "object-tag-other";
+}
+
+function getRoleBadgeClass(value) {
+  const v = String(value || "").toLowerCase();
+  if (v.includes("житель") || v.includes("владелец")) return "role-tag-resident";
+  if (v.includes("сотрудник") || v.includes("арендатор")) return "role-tag-employee";
+  if (v.includes("управля")) return "role-tag-uk";
+  if (v.includes("подряд")) return "role-tag-contractor";
+  return "role-tag-other";
+}
+
 async function submitSurvey() {
   const cfg = getConfig();
   let valid = true;
@@ -1024,8 +1073,8 @@ function renderAdminFromData(data) {
     <td>${escapeHtml(r.date)}</td>
     <td>${escapeHtml(r.name)}</td>
     <td>${escapeHtml(r.objectName)}</td>
-    <td>${escapeHtml(r.objectType)}</td>
-    <td><span class="role-tag">${escapeHtml(r.role || "")}</span></td>
+    <td><span class="admin-badge ${getObjectTypeBadgeClass(r.objectType)}">${escapeHtml(r.objectType || "")}</span></td>
+    <td><span class="admin-badge ${getRoleBadgeClass(r.role)}">${escapeHtml(r.role || "")}</span></td>
     <td><b>${escapeHtml(r.nps)}</b></td>
     <td style="max-width:180px">${escapeHtml((r.improvements || []).join(", "))}</td>
     <td>${escapeHtml(r.missing || "")}</td>
