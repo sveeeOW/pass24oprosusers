@@ -95,7 +95,7 @@
 
     /* ── MAIN ── */
     main { max-width: 860px; margin: 0 auto; padding: 28px 20px 56px; }
-    main.wide { max-width: 1180px; }
+    main.wide { max-width: min(1760px, calc(100vw - 32px)); padding-left: 16px; padding-right: 16px; }
 
     /* ── CARDS ── */
     .card {
@@ -304,6 +304,48 @@
     th { background: var(--bg); font-weight: 700; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
     tr:hover td { background: #fafafa; }
 
+    .admin-table-wrap {
+      width: 100%;
+      overflow-x: visible;
+    }
+    #responsesTable {
+      table-layout: fixed;
+      width: 100%;
+      font-size: 12px;
+      line-height: 1.38;
+    }
+    #responsesTable th,
+    #responsesTable td {
+      padding: 8px 8px;
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+    #responsesTable th {
+      font-size: 10.5px;
+      letter-spacing: .25px;
+      line-height: 1.25;
+    }
+    #responsesTable .cell-date { white-space: normal; }
+    #responsesTable .cell-nps { text-align: center; }
+    #responsesTable .cell-object,
+    #responsesTable .cell-type,
+    #responsesTable .cell-role { font-size: 11.5px; }
+    #responsesTable .cell-free {
+      min-width: 0;
+      white-space: pre-wrap;
+    }
+    #responsesTable .cell-improvements {
+      white-space: normal;
+    }
+    #responsesTable .cell-tg {
+      text-align: center;
+      font-size: 11.5px;
+    }
+    @media(max-width: 1100px) {
+      .admin-table-wrap { overflow-x: auto; }
+      #responsesTable { min-width: 1180px; }
+    }
+
     .avg-group { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
     .avg-row { margin: 12px 0; }
     .avg-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
@@ -367,7 +409,8 @@
       line-height: 1.25;
       vertical-align: middle;
       border: 1px solid transparent;
-      white-space: nowrap;
+      white-space: normal;
+      max-width: 100%;
     }
     .admin-badge::before {
       content: '';
@@ -571,7 +614,7 @@
 
         <div class="card">
           <h3>Ответы</h3>
-          <div style="overflow:auto"><table id="responsesTable"></table></div>
+          <div class="admin-table-wrap"><table id="responsesTable"></table></div>
         </div>
       </div>
 
@@ -1065,22 +1108,25 @@ function renderAdminFromData(data) {
 
   // Table
   const table = document.getElementById("responsesTable");
-  table.innerHTML = `<tr>
+  table.innerHTML = `<colgroup>
+    <col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:8%"><col style="width:9%">
+    <col style="width:4%"><col style="width:13%"><col style="width:16%"><col style="width:17%"><col style="width:5%"><col style="width:5%">
+  </colgroup><tr>
     <th>Дата</th><th>Имя</th><th>Объект</th><th>Тип</th><th>Роль</th>
     <th>NPS</th><th>Доработки</th><th>Чего не хватает</th><th>Проблемы</th>
-    <th>Знает TG-бот</th><th>Пользуется TG-ботом</th>
+    <th>Знает TG</th><th>Использует TG</th>
   </tr>` + data.map(r => `<tr>
-    <td>${escapeHtml(r.date)}</td>
+    <td class="cell-date">${escapeHtml(r.date)}</td>
     <td>${escapeHtml(r.name)}</td>
-    <td>${escapeHtml(r.objectName)}</td>
-    <td><span class="admin-badge ${getObjectTypeBadgeClass(r.objectType)}">${escapeHtml(r.objectType || "")}</span></td>
-    <td><span class="admin-badge ${getRoleBadgeClass(r.role)}">${escapeHtml(r.role || "")}</span></td>
-    <td><b>${escapeHtml(r.nps)}</b></td>
-    <td style="max-width:180px">${escapeHtml((r.improvements || []).join(", "))}</td>
-    <td>${escapeHtml(r.missing || "")}</td>
-    <td>${escapeHtml(r.problems || "")}</td>
-    <td>${escapeHtml(r.tgKnow || "")}</td>
-    <td>${escapeHtml(r.tgUse || "")}</td>
+    <td class="cell-object">${escapeHtml(r.objectName)}</td>
+    <td class="cell-type"><span class="admin-badge ${getObjectTypeBadgeClass(r.objectType)}">${escapeHtml(r.objectType || "")}</span></td>
+    <td class="cell-role"><span class="admin-badge ${getRoleBadgeClass(r.role)}">${escapeHtml(r.role || "")}</span></td>
+    <td class="cell-nps"><b>${escapeHtml(r.nps)}</b></td>
+    <td class="cell-improvements">${escapeHtml((r.improvements || []).join(", "))}</td>
+    <td class="cell-free">${escapeHtml(r.missing || "")}</td>
+    <td class="cell-free">${escapeHtml(r.problems || "")}</td>
+    <td class="cell-tg">${escapeHtml(r.tgKnow || "")}</td>
+    <td class="cell-tg">${escapeHtml(r.tgUse || "")}</td>
   </tr>`).join("");
 
   // NPS chart
