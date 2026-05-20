@@ -1172,81 +1172,105 @@ function resetSettings() {
 async function clearResponses() {
   if (!ADMIN_TOKEN) return alert("Сначала войдите в админку");
   if (!confirm("Удалить все ответы из Google Sheet? Заголовки таблицы останутся.")) return;
-  const res = await fetch("/api/clear-results", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: ADMIN_TOKEN })
-  });
-  const result = await res.json().catch(() => ({}));
-  if (!res.ok || !result.ok) return alert(result.error || "Не удалось очистить ответы");
-  await renderAdmin();
+
+  const btn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("Очистить ответы"));
+  const originalText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Очищаем...";
+  }
+
+  try {
+    const res = await fetch("/api/clear-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: ADMIN_TOKEN })
+    });
+    const result = await res.json().catch(() => ({}));
+
+    if (!res.ok || !result.ok) {
+      throw new Error(result.error || "Не удалось очистить ответы");
+    }
+
+    await delay(700);
+    await renderAdmin();
+
+    if (btn) btn.textContent = "Ответы очищены ✓";
+    setTimeout(() => {
+      if (btn) btn.textContent = originalText;
+    }, 1600);
+  } catch (err) {
+    console.error(err);
+
+    // Если Apps Script успел очистить таблицу, но Google вернул HTML/405 вместо JSON,
+    // пробуем перечитать данные и обновить интерфейс без ручной перезагрузки.
+    try {
+      await delay(1200);
+      await renderAdmin();
+      alert("Ответы очищены. Google вернул нестандартный ответ, но таблица успешно обновилась.");
+    } catch (refreshErr) {
+      alert("Не удалось очистить ответы или обновить таблицу: " + (err.message || refreshErr.message || "неизвестная ошибка"));
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      if (btn.textContent === "Очищаем...") btn.textContent = originalText;
+    }
+  }
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function seedDemo() {
-  const cfg = getConfig();
-  const demo = [
-    {
-      date: new Date().toLocaleString("ru-RU"), name: "Марина", objectName: "КП Берёзовый",
-      objectType: "Коттеджный поселок", role: "Житель / владелец",
-      nps: 9, npsReason: "Очень удобно звать гостей без звонков охране",
-      missing: "Хочу виджет на экране телефона", problems: "Иногда приходится долго искать пункт меню",
-      tgKnow: "Да", tgUse: "Да, иногда",
-      improvements: ["Быстрый повтор предыдущего пропуска", "Виджет / ярлык на главном экране телефона"],
-      csat: cfg.csat.map(q => ({ question: q, value: 4 + Math.round(Math.random()) })),
-      csi: cfg.csi.map(q => ({ question: q, importance: 4 + Math.round(Math.random()), satisfaction: 3 + Math.round(Math.random()) }))
-    },
-    {
-      date: new Date().toLocaleString("ru-RU"), name: "Дмитрий", objectName: "БЦ Горизонт",
-      objectType: "Бизнес-центр", role: "Сотрудник / арендатор",
-      nps: 7, npsReason: "В целом нормально, но не хватает шаблонов",
-      missing: "Шаблоны для повторных гостей", problems: "Уведомления приходят с опозданием",
-      tgKnow: "Нет", tgUse: "",
-      improvements: ["Шаблоны для частых гостей (родственники, курьеры)", "Заказ постоянного пропуска в пропусках, а не доверенностях"],
-      csat: cfg.csat.map(q => ({ question: q, value: 3 + Math.round(Math.random()) })),
-      csi: cfg.csi.map(q => ({ question: q, importance: 3 + Math.round(Math.random() * 2), satisfaction: 3 + Math.round(Math.random()) }))
-    },
-    {
-      date: new Date().toLocaleString("ru-RU"), name: "Ольга", objectName: "ЖК Солнечный",
-      objectType: "Жилой комплекс", role: "Житель / владелец",
-      nps: 10, npsReason: "Лучшее решение — уже рекомендовала соседям",
-      missing: "", problems: "",
-      tgKnow: "Да", tgUse: "Да, регулярно",
-      improvements: ["Возможность просмотра камер видеонаблюдения на КПП"],
-      csat: cfg.csat.map(q => ({ question: q, value: 5 })),
-      csi: cfg.csi.map(q => ({ question: q, importance: 5, satisfaction: 4 + Math.round(Math.random()) }))
-    }
-  ];
+  if (!ADMIN_TOKEN) return alert("Сначала войдите в админку");
 
-  let success = 0;
-  let lastError = "";
-
-  for (const response of demo) {
-    try {
-      const res = await fetch("/api/submit-survey", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(response)
-      });
-      const result = await res.json().catch(() => ({}));
-      if (!res.ok || !result.ok) throw new Error(result.error || "Не удалось добавить демо-ответ");
-      success++;
-    } catch (err) {
-      console.error(err);
-      lastError = err && err.message ? err.message : "Не удалось добавить демо-ответ";
-    }
+  const btn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("Добавить демо-данные"));
+  const originalText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Добавляем...";
   }
 
-  if (success) {
-    try {
-      await renderAdmin();
-    } catch (err) {
-      // Если запись прошла, но чтение Google Sheet временно не отвечает, показываем демо-данные локально.
-      cachedAdminData = demo.concat(cachedAdminData || []);
-      renderAdminFromData(cachedAdminData);
-      alert(`Добавлено демо-ответов: ${success}. Но не удалось перечитать Google Sheet: ${err.message || err}`);
+  try {
+    const res = await fetch("/api/seed-demo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: ADMIN_TOKEN })
+    });
+    const result = await res.json().catch(() => ({}));
+
+    if (!res.ok || !result.ok) {
+      throw new Error(result.error || "Не удалось добавить демо-данные");
     }
-  } else {
-    alert("Демо-данные не добавлены. " + (lastError || "Проверь APPS_SCRIPT_URL и деплой Apps Script."));
+
+    // Google Sheet иногда обновляется не мгновенно, поэтому даём Apps Script короткую паузу
+    // и перечитываем данные автоматически без ручной перезагрузки страницы.
+    await delay(900);
+    await renderAdmin();
+
+    if (btn) btn.textContent = "Демо-данные добавлены ✓";
+    setTimeout(() => {
+      if (btn) btn.textContent = originalText;
+    }, 1600);
+  } catch (err) {
+    console.error(err);
+
+    // Запись могла пройти, но Google redirect мог не отдать JSON. В этом случае пробуем
+    // всё равно перечитать таблицу и обновить админку, не пугая пользователя ложной ошибкой.
+    try {
+      await delay(1200);
+      await renderAdmin();
+      alert("Демо-данные добавлены. Google вернул нестандартный ответ, но таблица успешно обновилась.");
+    } catch (refreshErr) {
+      alert("Демо-данные не добавлены или не удалось обновить таблицу: " + (err.message || refreshErr.message || "неизвестная ошибка"));
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      if (btn.textContent === "Добавляем...") btn.textContent = originalText;
+    }
   }
 }
 

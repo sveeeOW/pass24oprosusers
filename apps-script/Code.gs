@@ -1,45 +1,44 @@
-/**
+/****************************************************
  * PASS24.online — Опрос пользователей
- * Google Apps Script Web App для сохранения и чтения ответов из Google Sheets.
+ * Google Apps Script + Google Sheets
  *
  * Script ID: 1M9_d6LGViAgBquXEwNhWkpo1jqiDhWAdJ1dIodIQHNhscoxU0wS7SSA4
  * Web App URL: https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
  *
- * Важно:
- * После каждой правки кода нужно сделать Deploy → Manage deployments → Edit → New version → Deploy.
- */
+ * После каждой правки: Deploy → Manage deployments → Edit → New version → Deploy
+ ****************************************************/
 
 const SHEET_NAME = 'Ответы';
 const ADMIN_TOKEN = 'pass24opros24';
 
-// Если скрипт НЕ привязан к таблице, вставь сюда ID Google Sheet.
 // Если скрипт создан через «Расширения → Apps Script» внутри таблицы, оставь пустым.
 const SPREADSHEET_ID = '';
 
 const HEADERS = [
-  'created_at',
-  'name',
-  'object_name',
-  'object_type',
-  'role',
-  'nps',
-  'nps_reason',
-  'missing',
-  'problems',
-  'tg_know',
-  'tg_use',
-  'improvements_json',
-  'csat_json',
-  'csi_json',
-  'csat_avg',
-  'csi_importance_avg',
-  'csi_satisfaction_avg',
-  'raw_json'
+  'Дата отправки',
+  'Имя',
+  'Название объекта',
+  'Тип объекта',
+  'Роль пользователя',
+  'NPS',
+  'Причина оценки NPS',
+  'Чего не хватает',
+  'Что неудобно',
+  'Знает про Telegram-бота',
+  'Пользуется Telegram-ботом',
+  'Выбранные доработки',
+  'Оценки CSAT',
+  'Оценки CSI',
+  'Средний CSAT',
+  'Средняя важность функций',
+  'Средняя удобность функций',
+  'Полный JSON ответа'
 ];
 
 function doGet(e) {
   try {
-    const action = (e && e.parameter && e.parameter.action) || 'ping';
+    const params = e && e.parameter ? e.parameter : {};
+    const action = params.action || 'ping';
 
     if (action === 'ping') {
       const ss = getSpreadsheet();
@@ -51,15 +50,62 @@ function doGet(e) {
       });
     }
 
-    if (action === 'getResponses') {
-      const token = (e.parameter && e.parameter.token) || '';
-      if (token !== ADMIN_TOKEN) {
+    if (action === 'getResponses' || action === 'getResults' || action === 'results') {
+      if (params.token !== ADMIN_TOKEN) {
         return jsonResponse({ ok: false, error: 'Unauthorized' });
       }
       return jsonResponse({ ok: true, data: getResponses() });
     }
 
-    return jsonResponse({ ok: false, error: 'Unknown action: ' + action });
+    // Для админских действий используем GET: он стабильнее в Apps Script Web App,
+    // потому что POST иногда уходит через redirect и Google возвращает HTML 405.
+    if (action === 'seedDemo' || action === 'addDemo' || action === 'demo' || action === 'demoData') {
+      if (params.token !== ADMIN_TOKEN) {
+        return jsonResponse({ ok: false, error: 'Unauthorized' });
+      }
+      const sheet = getSheet();
+      const lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        const demo = buildDemoResponses();
+        demo.forEach(item => sheet.appendRow(responseToRow(normalizeResponse(item))));
+        return jsonResponse({ ok: true, message: 'Demo responses added', count: demo.length });
+      } finally {
+        lock.releaseLock();
+      }
+    }
+
+    if (action === 'clearResponses' || action === 'clear') {
+      if (params.token !== ADMIN_TOKEN) {
+        return jsonResponse({ ok: false, error: 'Unauthorized' });
+      }
+      clearResponses();
+      return jsonResponse({ ok: true, message: 'Responses cleared' });
+    }
+
+    if (action === 'debugWrite') {
+      if (params.token !== ADMIN_TOKEN) {
+        return jsonResponse({ ok: false, error: 'Unauthorized' });
+      }
+      appendResponse(normalizeResponse({
+        name: 'DEBUG',
+        objectName: 'DEBUG',
+        objectType: 'DEBUG',
+        role: 'DEBUG',
+        nps: 10,
+        npsReason: 'Debug write test',
+        missing: '',
+        problems: '',
+        tgKnow: 'Нет',
+        tgUse: '',
+        improvements: [],
+        csat: [],
+        csi: []
+      }));
+      return jsonResponse({ ok: true, message: 'Debug row added' });
+    }
+
+    return jsonResponse({ ok: false, error: 'Unknown GET action: ' + action });
   } catch (err) {
     return jsonResponse({ ok: false, error: getErrorMessage(err) });
   }
@@ -67,94 +113,132 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    const body = parseBody(e);
-    const action = body.action || 'addResponse';
+    const request = parseRequest(e);
+    const action = request.action || 'addResponse';
+    const body = request.body || {};
 
-    if (action === 'addResponse') {
-      const payload = normalizePayload(body.payload || body);
-      appendResponse(payload);
-      return jsonResponse({ ok: true });
+    if (action === 'addResponse' || action === 'submitSurvey' || action === 'submit') {
+      const normalized = normalizeResponse(body);
+      validateResponse(normalized);
+      appendResponse(normalized);
+      return jsonResponse({ ok: true, message: 'Response saved' });
     }
 
-    if (action === 'clearResponses') {
-      const token = body.token || '';
+    if (action === 'seedDemo' || action === 'addDemo' || action === 'demo' || action === 'demoData') {
+      const sheet = getSheet();
+      const lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        const demo = buildDemoResponses();
+        demo.forEach(item => sheet.appendRow(responseToRow(normalizeResponse(item))));
+        return jsonResponse({ ok: true, message: 'Demo responses added', count: demo.length });
+      } finally {
+        lock.releaseLock();
+      }
+    }
+
+    if (action === 'debugWrite') {
+      appendResponse(normalizeResponse({
+        name: 'DEBUG',
+        objectName: 'DEBUG',
+        objectType: 'DEBUG',
+        role: 'DEBUG',
+        nps: 10,
+        npsReason: 'Debug write test',
+        missing: '',
+        problems: '',
+        tgKnow: 'Нет',
+        tgUse: '',
+        improvements: [],
+        csat: [],
+        csi: []
+      }));
+      return jsonResponse({ ok: true, message: 'Debug row added' });
+    }
+
+    if (action === 'clearResponses' || action === 'clear') {
+      const token = request.token || body.token || '';
       if (token !== ADMIN_TOKEN) {
         return jsonResponse({ ok: false, error: 'Unauthorized' });
       }
       clearResponses();
-      return jsonResponse({ ok: true });
+      return jsonResponse({ ok: true, message: 'Responses cleared' });
     }
 
-    return jsonResponse({ ok: false, error: 'Unknown action: ' + action });
+    return jsonResponse({ ok: false, error: 'Unknown POST action: ' + action });
   } catch (err) {
     return jsonResponse({ ok: false, error: getErrorMessage(err) });
   }
 }
 
-function parseBody(e) {
-  // Основной формат из Vercel: application/x-www-form-urlencoded.
-  // В нём есть action, payload и продублированные поля name/objectName/nps.
-  if (e && e.parameter && Object.keys(e.parameter).length) {
-    const params = e.parameter;
-    let payload = parseJson(params.payload, null);
+function parseRequest(e) {
+  const params = e && e.parameter ? e.parameter : {};
+  const postData = e && e.postData ? e.postData.contents : '';
 
-    // Если payload по какой-то причине не разобрался, собираем объект из прямых полей.
-    if (!payload || typeof payload !== 'object' || !Object.keys(payload).length) {
-      payload = buildPayloadFromParams(params);
-    }
+  let payload = {};
 
-    return {
-      action: params.action || 'addResponse',
-      token: params.token || '',
-      payload: payload
-    };
+  if (params.payload) {
+    payload = parseJson(params.payload, {});
   }
 
-  // Запасной формат: raw JSON/text/plain.
-  if (!e || !e.postData || !e.postData.contents) return {};
-
-  try {
-    const parsed = JSON.parse(e.postData.contents);
-    if (parsed && parsed.payload) {
-      parsed.payload = normalizePayload(parsed.payload);
-    }
-    return parsed || {};
-  } catch (err) {
-    throw new Error('Не удалось разобрать POST-запрос: ' + err.message);
+  if (!Object.keys(payload).length && postData) {
+    payload = parseJson(postData, {});
   }
-}
 
-function buildPayloadFromParams(params) {
+  const directFields = {};
+  ['name', 'objectName', 'objectType', 'role', 'nps', 'npsReason', 'missing', 'problems', 'tgKnow', 'tgUse'].forEach(key => {
+    if (params[key] !== undefined) directFields[key] = params[key];
+  });
+  ['improvements', 'csat', 'csi'].forEach(key => {
+    if (params[key] !== undefined) directFields[key] = parseJson(params[key], []);
+  });
+
+  const body = Object.assign({}, payload, directFields);
+
   return {
-    name: params.name || '',
-    objectName: params.objectName || params.object_name || '',
-    objectType: params.objectType || params.object_type || '',
-    role: params.role || '',
-    nps: parseNumberOrString(params.nps),
-    npsReason: params.npsReason || params.nps_reason || '',
-    missing: params.missing || '',
-    problems: params.problems || '',
-    tgKnow: params.tgKnow || params.tg_know || '',
-    tgUse: params.tgUse || params.tg_use || '',
-    improvements: parseJson(params.improvements, []),
-    csat: parseJson(params.csat, []),
-    csi: parseJson(params.csi, [])
+    action: params.action || payload.action || '',
+    token: params.token || payload.token || '',
+    body: body
   };
 }
 
-function normalizePayload(payload) {
-  if (typeof payload === 'string') {
-    payload = parseJson(payload, {});
+function normalizeResponse(body) {
+  if (typeof body === 'string') body = parseJson(body, {});
+  if (!body || typeof body !== 'object') body = {};
+
+  const npsValue = body.nps === '' || body.nps === null || body.nps === undefined ? null : Number(body.nps);
+
+  return {
+    name: body.name || '',
+    objectName: body.objectName || body.object_name || '',
+    objectType: body.objectType || body.object_type || '',
+    role: body.role || '',
+    nps: npsValue,
+    npsReason: body.npsReason || body.nps_reason || '',
+    missing: body.missing || '',
+    problems: body.problems || '',
+    tgKnow: body.tgKnow || body.tg_know || '',
+    tgUse: body.tgUse || body.tg_use || '',
+    improvements: Array.isArray(body.improvements) ? body.improvements : parseJson(body.improvements, []),
+    csat: Array.isArray(body.csat) ? body.csat : parseJson(body.csat, []),
+    csi: Array.isArray(body.csi) ? body.csi : parseJson(body.csi, []),
+    raw: body
+  };
+}
+
+function validateResponse(body) {
+  const missing = [];
+  if (!body.name) missing.push('name');
+  if (!body.objectName) missing.push('objectName');
+  if (body.nps === null || body.nps === undefined || isNaN(body.nps)) missing.push('nps');
+
+  if (missing.length) {
+    throw new Error('Required fields are missing: ' + missing.join(', ') + '. Received: ' + JSON.stringify({
+      name: body.name,
+      objectName: body.objectName,
+      nps: body.nps
+    }));
   }
-
-  if (!payload || typeof payload !== 'object') payload = {};
-
-  if (typeof payload.improvements === 'string') payload.improvements = parseJson(payload.improvements, []);
-  if (typeof payload.csat === 'string') payload.csat = parseJson(payload.csat, []);
-  if (typeof payload.csi === 'string') payload.csi = parseJson(payload.csi, []);
-  if (payload.nps !== '' && payload.nps !== null && payload.nps !== undefined) payload.nps = Number(payload.nps);
-
-  return payload;
 }
 
 function getSpreadsheet() {
@@ -164,9 +248,8 @@ function getSpreadsheet() {
 
   const active = SpreadsheetApp.getActiveSpreadsheet();
   if (!active) {
-    throw new Error('Скрипт не привязан к Google Sheet. Создай Apps Script через «Расширения → Apps Script» внутри таблицы или укажи SPREADSHEET_ID в Code.gs.');
+    throw new Error('Скрипт не привязан к Google Sheet. Создай Apps Script через «Расширения → Apps Script» внутри таблицы или укажи SPREADSHEET_ID.');
   }
-
   return active;
 }
 
@@ -179,28 +262,24 @@ function getSheet() {
 }
 
 function ensureHeaders(sheet) {
-  const current = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
+  const range = sheet.getRange(1, 1, 1, HEADERS.length);
+  const current = range.getValues()[0];
   const ok = HEADERS.every((header, index) => current[index] === header);
 
   if (!ok) {
-    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    range.setValues([HEADERS]);
     sheet.setFrozenRows(1);
   }
 }
 
 function appendResponse(payload) {
-  payload = normalizePayload(payload);
-
-  if (!payload || !payload.name || !payload.objectName || payload.nps === null || payload.nps === undefined || payload.nps === '' || isNaN(Number(payload.nps))) {
-    throw new Error('Required fields are missing: name, objectName или nps. Получены поля: ' + JSON.stringify(Object.keys(payload || {})));
-  }
+  payload = normalizeResponse(payload);
+  validateResponse(payload);
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
-
   try {
-    const sheet = getSheet();
-    sheet.appendRow(responseToRow(payload));
+    getSheet().appendRow(responseToRow(payload));
   } finally {
     lock.releaseLock();
   }
@@ -209,7 +288,6 @@ function appendResponse(payload) {
 function getResponses() {
   const sheet = getSheet();
   const lastRow = sheet.getLastRow();
-
   if (lastRow < 2) return [];
 
   const values = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
@@ -222,61 +300,107 @@ function getResponses() {
 function clearResponses() {
   const sheet = getSheet();
   const lastRow = sheet.getLastRow();
-
-  if (lastRow > 1) {
-    sheet.getRange(2, 1, lastRow - 1, HEADERS.length).clearContent();
-  }
+  if (lastRow > 1) sheet.getRange(2, 1, lastRow - 1, HEADERS.length).clearContent();
 }
 
-function responseToRow(payload) {
-  const csat = Array.isArray(payload.csat) ? payload.csat : [];
-  const csi = Array.isArray(payload.csi) ? payload.csi : [];
-  const improvements = Array.isArray(payload.improvements) ? payload.improvements : [];
+function responseToRow(body) {
+  const csat = Array.isArray(body.csat) ? body.csat : [];
+  const csi = Array.isArray(body.csi) ? body.csi : [];
+  const improvements = Array.isArray(body.improvements) ? body.improvements : [];
 
   return [
     new Date().toISOString(),
-    payload.name || '',
-    payload.objectName || '',
-    payload.objectType || '',
-    payload.role || '',
-    payload.nps ?? '',
-    payload.npsReason || '',
-    payload.missing || '',
-    payload.problems || '',
-    payload.tgKnow || '',
-    payload.tgUse || '',
+    body.name || '',
+    body.objectName || '',
+    body.objectType || '',
+    body.role || '',
+    body.nps ?? '',
+    body.npsReason || '',
+    body.missing || '',
+    body.problems || '',
+    body.tgKnow || '',
+    body.tgUse || '',
     JSON.stringify(improvements),
     JSON.stringify(csat),
     JSON.stringify(csi),
     avg(csat.map(item => item && item.value)),
     avg(csi.map(item => item && item.importance)),
     avg(csi.map(item => item && item.satisfaction)),
-    JSON.stringify(payload)
+    JSON.stringify(body.raw || body)
   ];
 }
 
 function rowToResponse(row) {
-  const values = {};
-  HEADERS.forEach((header, index) => {
-    values[header] = row[index] || '';
-  });
-
   return {
-    date: values.created_at ? Utilities.formatDate(new Date(values.created_at), Session.getScriptTimeZone(), 'dd.MM.yyyy, HH:mm:ss') : '',
-    name: values.name || '',
-    objectName: values.object_name || '',
-    objectType: values.object_type || '',
-    role: values.role || '',
-    nps: values.nps === '' ? null : Number(values.nps),
-    npsReason: values.nps_reason || '',
-    missing: values.missing || '',
-    problems: values.problems || '',
-    tgKnow: values.tg_know || '',
-    tgUse: values.tg_use || '',
-    improvements: parseJson(values.improvements_json, []),
-    csat: parseJson(values.csat_json, []),
-    csi: parseJson(values.csi_json, [])
+    date: row[0] ? Utilities.formatDate(new Date(row[0]), Session.getScriptTimeZone(), 'dd.MM.yyyy, HH:mm:ss') : '',
+    name: row[1] || '',
+    objectName: row[2] || '',
+    objectType: row[3] || '',
+    role: row[4] || '',
+    nps: row[5] === '' ? null : Number(row[5]),
+    npsReason: row[6] || '',
+    missing: row[7] || '',
+    problems: row[8] || '',
+    tgKnow: row[9] || '',
+    tgUse: row[10] || '',
+    improvements: parseJson(row[11], []),
+    csat: parseJson(row[12], []),
+    csi: parseJson(row[13], [])
   };
+}
+
+function buildDemoResponses() {
+  const csatQuestions = [
+    'Удобство создания гостевого пропуска',
+    'Скорость оформления пропуска (от открытия до готового пропуска)',
+    'Удобство приглашения гостя с автомобилем (автопропуск)',
+    'Стабильность работы приложения (без сбоев и зависаний)',
+    'Понятность интерфейса (легко найти нужное действие)',
+    'Дизайн интерфейса',
+    'Уведомления о статусе пропуска и проходе гостя',
+    'Приложение в целом — насколько вы им довольны'
+  ];
+
+  const csiQuestions = [
+    'Быстрота создания пропуска',
+    'Разные типы доступа (пешеход, авто, курьер, подрядчик)',
+    'Создание постоянного пропуска',
+    'Отправка приглашения гостю (QR-код, ссылка или SMS/мессенджер)',
+    'Установка даты и времени действия пропуска',
+    'Уведомление о проходе / въезде гостя в реальном времени',
+    'История пропусков с поиском',
+    'Редактирование и отмена пропуска после создания',
+    'Работа без звонков охране — самостоятельное управление доступом'
+  ];
+
+  return [
+    {
+      name: 'Марина', objectName: 'КП Берёзовый', objectType: 'Коттеджный поселок', role: 'Житель / владелец',
+      nps: 9, npsReason: 'Очень удобно звать гостей без звонков охране',
+      missing: 'Хочу виджет на экране телефона', problems: 'Иногда приходится долго искать пункт меню',
+      tgKnow: 'Да', tgUse: 'Да, иногда',
+      improvements: ['Быстрый повтор предыдущего пропуска', 'Виджет / ярлык на главном экране телефона'],
+      csat: csatQuestions.map(q => ({ question: q, value: randomInt(4, 5) })),
+      csi: csiQuestions.map(q => ({ question: q, importance: randomInt(4, 5), satisfaction: randomInt(3, 4) }))
+    },
+    {
+      name: 'Дмитрий', objectName: 'БЦ Горизонт', objectType: 'Бизнес-центр', role: 'Сотрудник / арендатор',
+      nps: 7, npsReason: 'В целом нормально, но не хватает шаблонов',
+      missing: 'Шаблоны для повторных гостей', problems: 'Уведомления приходят с опозданием',
+      tgKnow: 'Нет', tgUse: '',
+      improvements: ['Шаблоны для частых гостей (родственники, курьеры)', 'Заказ постоянного пропуска в пропусках, а не доверенностях'],
+      csat: csatQuestions.map(q => ({ question: q, value: randomInt(3, 4) })),
+      csi: csiQuestions.map(q => ({ question: q, importance: randomInt(3, 5), satisfaction: randomInt(3, 4) }))
+    },
+    {
+      name: 'Ольга', objectName: 'ЖК Солнечный', objectType: 'Жилой комплекс', role: 'Житель / владелец',
+      nps: 10, npsReason: 'Лучшее решение — уже рекомендовала соседям',
+      missing: '', problems: '', tgKnow: 'Да', tgUse: 'Да, регулярно',
+      improvements: ['Возможность просмотра камер видеонаблюдения на КПП'],
+      csat: csatQuestions.map(q => ({ question: q, value: 5 })),
+      csi: csiQuestions.map(q => ({ question: q, importance: 5, satisfaction: randomInt(4, 5) }))
+    }
+  ];
 }
 
 function avg(values) {
@@ -285,21 +409,15 @@ function avg(values) {
   return Number((clean.reduce((sum, value) => sum + value, 0) / clean.length).toFixed(2));
 }
 
-function parseNumberOrString(value) {
-  if (value === null || value === undefined || value === '') return '';
-  const num = Number(value);
-  return isNaN(num) ? value : num;
-}
-
 function parseJson(value, fallback) {
   if (value === null || value === undefined || value === '') return fallback;
+  if (Array.isArray(value)) return value;
   if (typeof value !== 'string') return value || fallback;
+  try { return JSON.parse(value) || fallback; } catch (err) { return fallback; }
+}
 
-  try {
-    return JSON.parse(value) || fallback;
-  } catch (e) {
-    return fallback;
-  }
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function getErrorMessage(err) {
@@ -314,7 +432,7 @@ function jsonResponse(data) {
 
 function testAppendResponse() {
   appendResponse({
-    name: 'Тестовый пользователь',
+    name: 'Тест',
     objectName: 'Тестовый объект',
     objectType: 'Коттеджный поселок',
     role: 'Житель / владелец',
@@ -322,10 +440,10 @@ function testAppendResponse() {
     npsReason: 'Тестовая запись',
     missing: '',
     problems: '',
-    tgKnow: 'Да',
-    tgUse: 'Да, иногда',
-    improvements: ['Быстрый повтор предыдущего пропуска'],
-    csat: [{ question: 'Приложение в целом — насколько вы им довольны', value: 5 }],
-    csi: [{ question: 'Быстрота создания пропуска', importance: 5, satisfaction: 5 }]
+    tgKnow: 'Нет',
+    tgUse: '',
+    improvements: [],
+    csat: [],
+    csi: []
   });
 }

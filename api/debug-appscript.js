@@ -1,25 +1,12 @@
-import { getFromAppsScript, postToAppsScript } from "../lib/appsScriptClient.js";
+import { ADMIN_TOKEN, getFromAppsScript } from "../lib/appsScriptClient.js";
 
 export default async function handler(req, res) {
   try {
     const ping = await getFromAppsScript("ping");
     let postTest = null;
     if (req.query?.write === "1") {
-      postTest = await postToAppsScript("addResponse", {
-        name: "DEBUG",
-        objectName: "DEBUG",
-        objectType: "DEBUG",
-        role: "DEBUG",
-        nps: 10,
-        npsReason: "Debug write test",
-        missing: "",
-        problems: "",
-        tgKnow: "Нет",
-        tgUse: "",
-        improvements: [],
-        csat: [],
-        csi: []
-      });
+      // Используем GET до Apps Script, чтобы избежать POST redirect → HTML 405.
+      postTest = await getFromAppsScript("debugWrite", ADMIN_TOKEN);
     }
     return res.status(200).json({ ok: true, ping, postTest });
   } catch (error) {
