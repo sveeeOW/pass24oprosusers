@@ -1,125 +1,86 @@
-# PASS24 — Опрос пользователей через Apps Script
+# PASS24.online — опрос пользователей, версия с исправленной передачей demo/ответов
 
-Готовая версия с уже вставленным Web App URL:
+В этой версии исправлена ошибка `Required fields are missing`: Vercel теперь дублирует данные и в `payload`, и в прямых form-полях, а Apps Script умеет читать оба формата.
 
-```txt
-https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
-```
+**Важно:** после загрузки файлов в GitHub нужно также заменить код в Google Apps Script на `apps-script/Code.gs` и сделать новый деплой: `Deploy → Manage deployments → Edit → Version → New version → Deploy`. Без нового деплоя Google будет выполнять старый код.
 
-Пароль админки: `pass24opros24`.
+# PASS24.online — опрос пользователей для Vercel + Google Apps Script
 
-Если в Vercel ранее была задана неправильная переменная `APPS_SCRIPT_URL` вида `script.googleusercontent.com/macros/echo?...`, эта версия её игнорирует и использует URL выше.
-
-# PASS24.online — Опрос пользователей через Vercel + Google Apps Script
-
-Проект публикуется на Vercel и сохраняет ответы в Google Sheets через Google Apps Script Web App.
+Проект сохраняет ответы опроса в Google Sheet через Google Apps Script Web App.
 
 ## Что исправлено в этой версии
 
-- Вход в админку больше не показывает «неверный пароль», если проблема на стороне Google Sheet / Apps Script.
-- Кнопка «Добавить демо-данные» теперь показывает понятную ошибку, если Apps Script URL указан неправильно.
-- Кнопка «⬇ Экспорт CSV» теперь всегда срабатывает: если данные не загрузились, выгружается CSV-шаблон с заголовками.
-- Убрана попытка использовать временный `script.googleusercontent.com/macros/echo?...` как рабочий API URL.
+1. Vercel отправляет данные в Apps Script через `application/x-www-form-urlencoded`, а не через сырой JSON.
+2. Редирект Google Apps Script обрабатывается вручную: POST не превращается в GET.
+3. Добавлен диагностический endpoint `/api/debug-appscript`.
+4. Ошибки отправки теперь показываются подробнее.
 
 ## Структура
 
 ```txt
-public/index.html          # Опрос + админка
-api/submit-survey.js       # Прокси Vercel для записи ответа в Apps Script
-api/get-results.js         # Прокси Vercel для чтения ответов из Apps Script
-api/clear-results.js       # Прокси Vercel для очистки ответов
-apps-script/Code.gs        # Код Google Apps Script для вставки в Google Sheet
+public/index.html
+api/submit-survey.js
+api/get-results.js
+api/clear-results.js
+api/debug-appscript.js
+lib/appsScriptClient.js
+apps-script/Code.gs
 package.json
-.env.example
 vercel.json
 ```
 
-## Главный важный момент
+## Важно
 
-Для `APPS_SCRIPT_URL` нужен именно стабильный Web App URL из Apps Script:
-
-```txt
-https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
-```
-
-Нельзя использовать URL такого вида:
+Недостаточно только загрузить новый Vercel-проект. Нужно также заменить код в Google Apps Script на содержимое файла:
 
 ```txt
-https://script.googleusercontent.com/macros/echo?user_content_key=...
+apps-script/Code.gs
 ```
 
-`script.googleusercontent.com/macros/echo?...` — это временный redirect/echo-адрес ответа, а не стабильный endpoint для записи и чтения данных.
-
-## Переменные Vercel
-
-В Vercel → Project → Settings → Environment Variables добавь:
+После замены кода Apps Script обязательно сделай новый деплой:
 
 ```txt
-APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
-ADMIN_TOKEN=pass24opros24
+Apps Script → Deploy → Manage deployments → Edit → Version → New version → Deploy
 ```
 
-Пароль админки в коде уже зафиксирован как:
+Если не создать новую версию деплоя, Vercel будет обращаться к старому коду Apps Script.
+
+## Пароль админки
 
 ```txt
 pass24opros24
 ```
 
-## Как получить правильный Apps Script URL
+## Apps Script URL
 
-1. Открой Google Sheet.
-2. Перейди в `Extensions → Apps Script` / `Расширения → Apps Script`.
-3. Вставь код из `apps-script/Code.gs`.
-4. Нажми `Deploy → New deployment`.
-5. Тип деплоя: `Web app`.
-6. `Execute as`: `Me`.
-7. `Who has access`: `Anyone` или `Anyone with the link`.
-8. Нажми `Deploy`.
-9. Скопируй именно `Web app URL`.
-10. Он должен заканчиваться на `/exec`.
-
-Если деплой уже создан:
+В код уже вставлен URL:
 
 ```txt
-Deploy → Manage deployments → Web app URL
+https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec
 ```
 
-## Проверка Apps Script
+Если в Vercel есть переменная `APPS_SCRIPT_URL`, она может переопределить URL из кода. Лучше указать там тот же URL или удалить старую неправильную переменную.
 
-Открой Web App URL в браузере. Должен вернуться JSON:
+## Проверка после деплоя
+
+1. Открой:
+
+```txt
+https://твой-домен.vercel.app/api/debug-appscript
+```
+
+Должно вернуться:
 
 ```json
-{"ok":true,"message":"PASS24 users survey Apps Script is working"}
+{"ok":true,"ping":{"ok":true,"message":"PASS24 users survey Apps Script is working"},"postTest":null}
 ```
 
-Если видишь HTML, ошибку доступа или пустую страницу — деплой Apps Script настроен неправильно.
-
-## Проверка записи
-
-1. В Apps Script запусти функцию `testAppendResponse` вручную.
-2. В Google Sheet должна появиться тестовая строка.
-3. После этого открой сайт на Vercel и отправь тестовый ответ.
-4. Новая строка должна появиться в Google Sheet.
-
-## Колонки Google Sheet
+2. Для проверки записи открой:
 
 ```txt
-created_at
-name
-object_name
-object_type
-role
-nps
-nps_reason
-missing
-problems
-tg_know
-tg_use
-improvements_json
-csat_json
-csi_json
-csat_avg
-csi_importance_avg
-csi_satisfaction_avg
-raw_json
+https://твой-домен.vercel.app/api/debug-appscript?write=1
 ```
+
+После этого в Google Sheet должна появиться строка `DEBUG`.
+
+3. Потом проверь обычную форму опроса и кнопку `Добавить демо-данные`.

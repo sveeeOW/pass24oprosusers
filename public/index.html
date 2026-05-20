@@ -909,7 +909,7 @@ async function submitSurvey() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (err) {
     console.error(err);
-    alert("Не удалось отправить ответ. Проверьте подключение и попробуйте ещё раз.");
+    alert("Не удалось отправить ответ: " + (err.message || "проверьте подключение и попробуйте ещё раз."));
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = originalText;
@@ -964,7 +964,7 @@ let npsChart, improvementsChart;
 function handleAdminLoadError(err) {
   console.error(err);
   const msg = err && err.message ? err.message : "Ошибка загрузки данных";
-  alert("Пароль принят, но не удалось загрузить данные из Google Sheet. " + msg);
+  alert("Пароль принят, но не удалось загрузить данные из Google Sheet: " + msg);
 }
 
 async function loadResponsesFromServer() {

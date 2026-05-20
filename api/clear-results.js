@@ -1,53 +1,22 @@
-const ADMIN_TOKEN = "pass24opros24";
-
-const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfCubdL0GqzT7Xc93Vb8wkbNZl36PAEQJonE2V_N_5O2Hx-tw9uzVyOiJvX9SLlk0Z/exec";
-
-function getAppsScriptUrl() {
-  const envUrl = String(process.env.APPS_SCRIPT_URL || "").trim();
-
-  // Если в Vercel осталась старая/битая переменная script.googleusercontent.com,
-  // не даём ей ломать проект и используем зафиксированный рабочий Web App URL.
-  if (envUrl && envUrl.includes("script.googleusercontent.com/macros/echo")) {
-    return DEFAULT_APPS_SCRIPT_URL;
-  }
-
-  return envUrl || DEFAULT_APPS_SCRIPT_URL;
-}
+import { ADMIN_TOKEN, normalizeBody, postToAppsScript, readRequestBody } from "../lib/appsScriptClient.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const token = String(req.body?.token || "").trim();
-  if (token !== ADMIN_TOKEN) {
-    return res.status(401).json({ ok: false, error: "Unauthorized" });
-  }
-
-  let appsScriptUrl;
   try {
-    appsScriptUrl = getAppsScriptUrl();
-  } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message });
-  }
+    const body = normalizeBody(req.body && Object.keys(req.body || {}).length ? req.body : await readRequestBody(req));
+    const token = String(body?.token || "").trim();
 
-  try {
-    const response = await fetch(appsScriptUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "clearResponses", token })
-    });
-
-    const result = await response.json().catch(() => ({}));
-
-    if (!response.ok || !result.ok) {
-      console.error("Apps Script clear error", result);
-      return res.status(500).json({ ok: false, error: result.error || "Apps Script clear error" });
+    if (token !== ADMIN_TOKEN) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
 
+    await postToAppsScript("clearResponses", {}, token);
     return res.status(200).json({ ok: true });
   } catch (error) {
-    console.error(error);
+    console.error("clear-results error", error);
     return res.status(500).json({ ok: false, error: error.message || "Apps Script clear error" });
   }
 }
