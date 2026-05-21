@@ -388,7 +388,7 @@ function buildDemoResponses() {
       nps: 7, npsReason: 'В целом нормально, но не хватает шаблонов',
       missing: 'Шаблоны для повторных гостей', problems: 'Уведомления приходят с опозданием',
       tgKnow: 'Нет', tgUse: '',
-      improvements: ['Шаблоны для частых гостей (родственники, курьеры)', 'Заказ постоянного пропуска в пропусках, а не доверенностях'],
+      improvements: ['Шаблоны для частых гостей (родственники, курьеры)', 'Перенести заказ постоянного пропуска из «Запросов» в раздел заказа пропусков'],
       csat: csatQuestions.map(q => ({ question: q, value: randomInt(3, 4) })),
       csi: csiQuestions.map(q => ({ question: q, importance: randomInt(3, 5), satisfaction: randomInt(3, 4) }))
     },

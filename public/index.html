@@ -94,7 +94,8 @@
     nav button.active { background: var(--red); color: white; }
 
     /* ── MAIN ── */
-    main { max-width: 860px; margin: 0 auto; padding: 28px 20px 56px; }
+    main { max-width: min(1120px, calc(100vw - 40px)); margin: 0 auto; padding: 28px 20px 56px; }
+    main.survey-main { max-width: min(1180px, calc(100vw - 48px)); }
     main.wide { max-width: min(1760px, calc(100vw - 32px)); padding-left: 16px; padding-right: 16px; }
 
     /* ── CARDS ── */
@@ -438,6 +439,44 @@
     .role-tag-other { background: #f4f4f5; color: #52525b; border-color: #d4d4d8; }
 
 
+    /* ── DESKTOP / RESPONSIVE SURVEY LAYOUT ── */
+    @media(min-width: 1024px) {
+      main.survey-main .card {
+        padding: 28px 32px;
+      }
+      main.survey-main #csatSection {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px 24px;
+      }
+      main.survey-main #csatSection > div {
+        margin-bottom: 0 !important;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: #fff;
+      }
+      main.survey-main .check-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      main.survey-main textarea {
+        min-height: 112px;
+      }
+    }
+
+    @media(min-width: 1280px) {
+      main.survey-main {
+        max-width: min(1240px, calc(100vw - 64px));
+      }
+      main.survey-main .card {
+        padding: 30px 36px;
+      }
+      main.survey-main .grid {
+        gap: 18px 24px;
+      }
+    }
+
+
     /* ── MOBILE OPTIMIZATION ── */
     .scale-line {
       display: flex;
@@ -496,6 +535,7 @@
         border-radius: 10px;
       }
       main,
+      main.survey-main,
       main.wide {
         max-width: 100%;
         padding: 16px 12px 44px;
@@ -664,6 +704,7 @@
 
     @media(max-width: 390px) {
       main,
+      main.survey-main,
       main.wide {
         padding-left: 10px;
         padding-right: 10px;
@@ -703,9 +744,9 @@
      SURVEY PAGE
 ══════════════════════════════ -->
 <div id="surveyPage">
-  <main>
+  <main class="survey-main">
     <!-- Intro banner -->
-    <div class="card card-accent" style="margin-bottom:20px">
+    <div id="surveyIntro" class="card card-accent" style="margin-bottom:20px">
       <h2>Расскажите, как вам приложение</h2>
       <p class="muted" style="margin:0">Опрос займёт 3–5 минут. Ваши ответы помогут нам сделать оформление пропусков проще и удобнее.</p>
     </div>
@@ -945,7 +986,7 @@ const DEFAULT_CONFIG = {
     "Виджет / ярлык на главном экране телефона",
     "Групповой пропуск для нескольких гостей",
     "Чат или связь с охраной через приложение",
-    "Заказ постоянного пропуска в пропусках, а не доверенностях",
+    "Перенести заказ постоянного пропуска из «Запросов» в раздел заказа пропусков",
     "Возможность просмотра камер видеонаблюдения на КПП"
   ]
 };
@@ -1244,6 +1285,7 @@ async function submitSurvey() {
       throw new Error(result.error || "Ошибка отправки ответа");
     }
 
+    document.getElementById("surveyIntro").classList.add("hidden");
     document.getElementById("surveyForm").classList.add("hidden");
     document.getElementById("successBanner").classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1257,6 +1299,7 @@ async function submitSurvey() {
 }
 
 function resetSurvey() {
+  document.getElementById("surveyIntro").classList.remove("hidden");
   document.getElementById("surveyForm").classList.remove("hidden");
   document.getElementById("successBanner").classList.add("hidden");
   renderSurvey();
